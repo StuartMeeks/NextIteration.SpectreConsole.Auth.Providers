@@ -1,5 +1,11 @@
 # NextIteration.SpectreConsole.Auth.Providers.Airtable
 
+[![NuGet](https://img.shields.io/nuget/v/NextIteration.SpectreConsole.Auth.Providers.Airtable.svg)](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth.Providers.Airtable/)
+[![Downloads](https://img.shields.io/nuget/dt/NextIteration.SpectreConsole.Auth.Providers.Airtable.svg)](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth.Providers.Airtable/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+[![CI](https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/actions/workflows/ci.yml/badge.svg)](https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/actions/workflows/ci.yml)
+
 Airtable credential provider for [**NextIteration.SpectreConsole.Auth**](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth).
 
 Drops a ready-to-use `AirtableCredential`, `AirtableToken`, authentication service, Spectre.Console `accounts add` prompt collector, and `accounts list` display formatter into a CLI that already uses the core auth package.

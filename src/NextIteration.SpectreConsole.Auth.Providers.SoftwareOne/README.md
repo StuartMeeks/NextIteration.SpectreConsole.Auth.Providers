@@ -1,5 +1,11 @@
 # NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 
+[![NuGet](https://img.shields.io/nuget/v/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.svg)](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne/)
+[![Downloads](https://img.shields.io/nuget/dt/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.svg)](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+[![CI](https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/actions/workflows/ci.yml/badge.svg)](https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/actions/workflows/ci.yml)
+
 SoftwareOne Marketplace credential provider for [**NextIteration.SpectreConsole.Auth**](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth).
 
 Drops a ready-to-use `SoftwareOneCredential`, `SoftwareOneToken`, authentication service, Spectre.Console `accounts add` prompt collector, and `accounts list` display formatter into a CLI that already uses the core auth package.
@@ -90,6 +96,13 @@ SoftwareOne tokens are **long-lived** and issued out-of-band via the Marketplace
 ## Supported platforms
 
 Whatever the core package supports (currently Windows, macOS, Linux on .NET 10).
+
+---
+
+## References
+
+- **SoftwareOne Marketplace REST API** — <https://docs.platform.softwareone.com/developer-resources/rest-api>
+  Endpoints, request/response shapes, authentication model, and how to generate API tokens from the Marketplace portal.
 
 ---
 

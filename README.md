@@ -1,5 +1,9 @@
 # NextIteration.SpectreConsole.Auth.Providers
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+[![CI](https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/actions/workflows/ci.yml/badge.svg)](https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/actions/workflows/ci.yml)
+
 Provider packages for [**NextIteration.SpectreConsole.Auth**](https://www.nuget.org/packages/NextIteration.SpectreConsole.Auth) — the generic credential-storage and Spectre.Console command layer for .NET CLI tools.
 
 Each package here ships the concrete types for one third-party service: its `ICredential`, `IToken`, `IAuthenticationService`, the `ICredentialCollector` that drives the interactive `accounts add` prompt, and an `ICredentialSummaryProvider` that renders safe display fields for `accounts list`. Drop a package in, call one DI extension, and the `accounts` branch of your CLI picks it up.
