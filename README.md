@@ -94,6 +94,12 @@ The canonical recipe is one of the existing provider projects under [`src/`](src
 
 ---
 
+## Releasing
+
+Each provider releases independently via a per-package git tag (`adobe-v*`, `airtable-v*`, `softwareone-v*`). CI picks up the tag, builds, tests, and pushes just that package to nuget.org. See [RELEASING.md](RELEASING.md) for the full flow.
+
+---
+
 ## License
 
 MIT © Stuart Meeks

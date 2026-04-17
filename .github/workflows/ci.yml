@@ -6,6 +6,10 @@ env:
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'adobe-v*'
+      - 'airtable-v*'
+      - 'softwareone-v*'
   pull_request:
     branches: [ main ]
 
@@ -39,53 +43,52 @@ jobs:
           name: nuget-packages
           path: ${{ github.workspace }}/artifacts/*.nupkg
 
-# ---------------------------------------------------------------------------
-# Publish scaffold — uncomment when ready to push to nuget.org.
-#
-# Three packages may version independently, so a single `v*` tag would lock
-# them into lockstep. Prefer per-package tags:
-#
-#   softwareone-v0.2.0   -> publish SoftwareOne only
-#   adobe-v0.1.1         -> publish Adobe only
-#   airtable-v0.1.0      -> publish Airtable only
-#
-# The `on.push.tags` filter below accepts any of those prefixes; the
-# `Filter nupkg` step narrows the upload/push to the single matching package.
-# ---------------------------------------------------------------------------
-#
-#  publish:
-#    needs: build
-#    runs-on: ubuntu-latest
-#    if: startsWith(github.ref, 'refs/tags/softwareone-v') || startsWith(github.ref, 'refs/tags/adobe-v') || startsWith(github.ref, 'refs/tags/airtable-v')
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v6
-#
-#      - name: Setup .NET 10
-#        uses: actions/setup-dotnet@v5
-#        with:
-#          dotnet-version: '10.0.x'
-#
-#      - name: Download artifact
-#        uses: actions/download-artifact@v7
-#        with:
-#          name: nuget-packages
-#          path: ./artifacts
-#
-#      - name: Resolve package prefix
-#        id: prefix
-#        run: |
-#          ref="${GITHUB_REF_NAME}"
-#          case "$ref" in
-#            softwareone-v*) echo "pkg=NextIteration.SpectreConsole.Auth.Providers.SoftwareOne" >> "$GITHUB_OUTPUT" ;;
-#            adobe-v*)       echo "pkg=NextIteration.SpectreConsole.Auth.Providers.Adobe"       >> "$GITHUB_OUTPUT" ;;
-#            airtable-v*)    echo "pkg=NextIteration.SpectreConsole.Auth.Providers.Airtable"    >> "$GITHUB_OUTPUT" ;;
-#          esac
-#
-#      - name: Publish to NuGet
-#        run: |
-#          dotnet nuget push "./artifacts/${{ steps.prefix.outputs.pkg }}.*.nupkg" \
-#            --api-key "${{ secrets.NUGET_API_KEY }}" \
-#            --source https://api.nuget.org/v3/index.json \
-#            --skip-duplicate
+  # Publishes a single provider's nupkg to nuget.org. Fired by tag push
+  # only — per-package tag prefixes (adobe-v*, airtable-v*, softwareone-v*)
+  # let each package ship independently:
+  #
+  #   adobe-v0.1.1       -> publishes Adobe only
+  #   airtable-v0.2.0    -> publishes Airtable only
+  #   softwareone-v0.1.5 -> publishes SoftwareOne only
+  #
+  # The build job runs first and produces the nupkg artifact; this job
+  # downloads it, narrows the glob to the package matching the tag
+  # prefix, and pushes that single nupkg. Re-running a completed tag is
+  # a no-op thanks to --skip-duplicate.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/adobe-v') || startsWith(github.ref, 'refs/tags/airtable-v') || startsWith(github.ref, 'refs/tags/softwareone-v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: nuget-packages
+          path: ./artifacts
+
+      - name: Resolve package id from tag prefix
+        id: prefix
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          case "$ref" in
+            adobe-v*)       echo "pkg=NextIteration.SpectreConsole.Auth.Providers.Adobe"       >> "$GITHUB_OUTPUT" ;;
+            airtable-v*)    echo "pkg=NextIteration.SpectreConsole.Auth.Providers.Airtable"    >> "$GITHUB_OUTPUT" ;;
+            softwareone-v*) echo "pkg=NextIteration.SpectreConsole.Auth.Providers.SoftwareOne" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::Unrecognised tag prefix: $ref"; exit 1 ;;
+          esac
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push "./artifacts/${{ steps.prefix.outputs.pkg }}.*.nupkg" \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
