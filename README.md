@@ -11,8 +11,8 @@ Each package here ships the concrete types for one third-party service: its `ICr
 | Package                                                              | Service                                       | Status      |
 |----------------------------------------------------------------------|-----------------------------------------------|-------------|
 | `NextIteration.SpectreConsole.Auth.Providers.SoftwareOne`            | SoftwareOne Marketplace API                   | Ready       |
-| `NextIteration.SpectreConsole.Auth.Providers.Adobe`                  | Adobe (VIP / price-list APIs)                 | Pending review |
-| `NextIteration.SpectreConsole.Auth.Providers.Airtable`               | Airtable API                                  | Pending review |
+| `NextIteration.SpectreConsole.Auth.Providers.Adobe`                  | Adobe VIP Marketplace API (OAuth2 via Adobe IMS) | Ready       |
+| `NextIteration.SpectreConsole.Auth.Providers.Airtable`               | Airtable API (Personal Access Token)          | Ready       |
 
 Each project has its own README with install instructions, the prompts the collector runs, the fields it stores, and the authentication model (refresh vs. pass-through) — see [`src/`](src).
 
@@ -30,6 +30,8 @@ A provider package plugs into those extensibility points for one specific servic
 
 ```csharp
 using NextIteration.SpectreConsole.Auth;
+using NextIteration.SpectreConsole.Auth.Providers.Adobe;
+using NextIteration.SpectreConsole.Auth.Providers.Airtable;
 using NextIteration.SpectreConsole.Auth.Providers.SoftwareOne;
 
 services.AddCredentialStore(opts =>
@@ -39,10 +41,15 @@ services.AddCredentialStore(opts =>
         ".my-cli", "credentials");
 });
 
+// Adobe's auth service hits Adobe IMS, so it needs IHttpClientFactory.
+// The other two are pass-through and don't require it — but registering
+// it once is harmless.
+services.AddHttpClient();
+
 // One line per provider you want to support:
+services.AddAdobeAuthProvider();
+services.AddAirtableAuthProvider();
 services.AddSoftwareOneAuthProvider();
-// services.AddAdobeAuthProvider();
-// services.AddAirtableAuthProvider();
 
 // And register the accounts branch against your Spectre.Console configurator:
 //     config.AddAccountsBranch();
