@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<AnalysisLevel>latest</AnalysisLevel>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PackageId>NextIteration.SpectreConsole.Auth.Providers.Adobe</PackageId>
+		<Version>0.1.0</Version>
+		<Description>Adobe VIP Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships AdobeCredential, AdobeToken, AdobeAuthenticationService (OAuth2 client-credentials against Adobe IMS), and the Spectre.Console collector that drives the accounts-add prompt.</Description>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageOutputPath>C:\nuget-local\</PackageOutputPath>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>spectre;cli;authentication;credentials;adobe;vip;marketplace;ims</PackageTags>
+		<PackageIcon>icon.png</PackageIcon>
+		<Copyright>© Stuart Meeks</Copyright>
+		<EnablePackageValidation>true</EnablePackageValidation>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<DebugType>embedded</DebugType>
+		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
+		<PackageReference Include="Spectre.Console" Version="0.54.0" />
+		<!--
+			Capped range: accept any patch/minor in the 0.x line, but
+			prevent silent upgrade to 1.0.0 where the ICredentialCollector /
+			ICredentialSummaryProvider contracts could break. Bump the upper
+			bound deliberately after validating against the next major.
+		-->
+		<PackageReference Include="NextIteration.SpectreConsole.Auth" Version="[0.4.1,1.0.0)" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="icon.png" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+</Project>

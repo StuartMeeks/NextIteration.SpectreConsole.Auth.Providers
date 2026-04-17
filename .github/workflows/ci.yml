@@ -1,0 +1,94 @@
+name: CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        # NuGet.Config lists a Windows-path local feed (C:\nuget-local\)
+        # which doesn't exist on the CI runner. NuGet emits a warning and
+        # falls back to nuget.org — expected; no action required.
+        run: dotnet restore
+
+      - name: Build
+        # Override PackageOutputPath so the auto-generated .nupkg lands in
+        # ./artifacts instead of the Windows-path the csprojs hardcode.
+        run: dotnet build --configuration Release --no-restore -p:PackageOutputPath=${{ github.workspace }}/artifacts
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: nuget-packages
+          path: ${{ github.workspace }}/artifacts/*.nupkg
+
+# ---------------------------------------------------------------------------
+# Publish scaffold — uncomment when ready to push to nuget.org.
+#
+# Three packages may version independently, so a single `v*` tag would lock
+# them into lockstep. Prefer per-package tags:
+#
+#   softwareone-v0.2.0   -> publish SoftwareOne only
+#   adobe-v0.1.1         -> publish Adobe only
+#   airtable-v0.1.0      -> publish Airtable only
+#
+# The `on.push.tags` filter below accepts any of those prefixes; the
+# `Filter nupkg` step narrows the upload/push to the single matching package.
+# ---------------------------------------------------------------------------
+#
+#  publish:
+#    needs: build
+#    runs-on: ubuntu-latest
+#    if: startsWith(github.ref, 'refs/tags/softwareone-v') || startsWith(github.ref, 'refs/tags/adobe-v') || startsWith(github.ref, 'refs/tags/airtable-v')
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v6
+#
+#      - name: Setup .NET 10
+#        uses: actions/setup-dotnet@v5
+#        with:
+#          dotnet-version: '10.0.x'
+#
+#      - name: Download artifact
+#        uses: actions/download-artifact@v7
+#        with:
+#          name: nuget-packages
+#          path: ./artifacts
+#
+#      - name: Resolve package prefix
+#        id: prefix
+#        run: |
+#          ref="${GITHUB_REF_NAME}"
+#          case "$ref" in
+#            softwareone-v*) echo "pkg=NextIteration.SpectreConsole.Auth.Providers.SoftwareOne" >> "$GITHUB_OUTPUT" ;;
+#            adobe-v*)       echo "pkg=NextIteration.SpectreConsole.Auth.Providers.Adobe"       >> "$GITHUB_OUTPUT" ;;
+#            airtable-v*)    echo "pkg=NextIteration.SpectreConsole.Auth.Providers.Airtable"    >> "$GITHUB_OUTPUT" ;;
+#          esac
+#
+#      - name: Publish to NuGet
+#        run: |
+#          dotnet nuget push "./artifacts/${{ steps.prefix.outputs.pkg }}.*.nupkg" \
+#            --api-key "${{ secrets.NUGET_API_KEY }}" \
+#            --source https://api.nuget.org/v3/index.json \
+#            --skip-duplicate
