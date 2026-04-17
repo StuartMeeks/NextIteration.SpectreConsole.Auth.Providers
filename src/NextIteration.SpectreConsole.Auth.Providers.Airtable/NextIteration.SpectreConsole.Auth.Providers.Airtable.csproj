@@ -11,7 +11,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.Airtable</PackageId>
-		<Version>0.1.0</Version>
+		<Version>0.1.1</Version>
 		<Description>Airtable credential provider for NextIteration.SpectreConsole.Auth. Ships AirtableCredential, AirtableToken, AirtableAuthenticationService (pass-through personal access token), and the Spectre.Console collector that drives the accounts-add prompt.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageOutputPath>C:\nuget-local\</PackageOutputPath>

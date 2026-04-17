@@ -11,7 +11,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.Adobe</PackageId>
-		<Version>0.1.0</Version>
+		<Version>0.1.1</Version>
 		<Description>Adobe VIP Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships AdobeCredential, AdobeToken, AdobeAuthenticationService (OAuth2 client-credentials against Adobe IMS), and the Spectre.Console collector that drives the accounts-add prompt.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageOutputPath>C:\nuget-local\</PackageOutputPath>

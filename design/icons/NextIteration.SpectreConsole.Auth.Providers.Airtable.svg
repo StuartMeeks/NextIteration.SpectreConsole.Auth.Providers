@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="64" fill="#1e1e2e"/>
+  <g transform="translate(19,19) scale(0.1758)">
+    <path d="M255.996,0C209.875,55.353,136.065,87.638,53.039,92.25c0,0,0,142.991,0,189.12
+      C53.039,405.914,255.996,512,255.996,512s202.966-106.086,202.966-230.63c0-46.129,0-189.12,0-189.12
+      C375.926,87.638,302.116,55.353,255.996,0z" fill="white" stroke="none"/>
+  </g>
+  <text x="64" y="64" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800" fill="#1e1e2e" text-anchor="middle" dominant-baseline="middle" letter-spacing="-1">Next</text>
+  <rect x="0" y="102" width="128" height="26" rx="6" fill="#00897B"/>
+  <text x="64" y="115" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle" dominant-baseline="middle">Airtable</text>
+</svg>

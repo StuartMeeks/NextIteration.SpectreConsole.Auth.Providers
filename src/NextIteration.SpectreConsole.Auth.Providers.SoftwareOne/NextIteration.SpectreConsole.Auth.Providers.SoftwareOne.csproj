@@ -11,7 +11,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.SoftwareOne</PackageId>
-		<Version>0.1.0</Version>
+		<Version>0.1.1</Version>
 		<Description>SoftwareOne Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships SoftwareOneCredential, SoftwareOneToken, SoftwareOneAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageOutputPath>C:\nuget-local\</PackageOutputPath>
