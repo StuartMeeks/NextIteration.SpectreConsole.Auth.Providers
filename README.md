@@ -100,6 +100,12 @@ Each provider releases independently via a per-package git tag (`adobe-v*`, `air
 
 ---
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
+
+---
+
 ## License
 
 MIT © Stuart Meeks
