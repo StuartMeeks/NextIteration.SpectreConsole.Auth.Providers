@@ -5,8 +5,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 {
     /// <summary>
     /// Projects a <see cref="SoftwareOneCredential"/> into the label/value
-    /// pairs shown by <c>accounts list</c> — Actor, Base URL, and a masked
-    /// API token.
+    /// pairs shown by <c>accounts list</c>. As of 0.3.0 the credential
+    /// carries validated SoftwareOne-side metadata (token id/name, account
+    /// id/name/type), so the display is richer: the account is the primary
+    /// identity, with the actor/environment/base URL as context and the
+    /// token rendered as a masked fingerprint plus its friendly name.
     /// </summary>
     public sealed class SoftwareOneCredentialSummaryProvider : ICredentialSummaryProvider
     {
@@ -17,8 +20,9 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         public IReadOnlyList<KeyValuePair<string, string>> GetDisplayFields(string decryptedCredentialJson)
         {
             // Defensive: if deserialization fails (corrupt keystore, schema
-            // drift), surface a visible marker instead of throwing into the
-            // Spectre render loop and taking down the list command.
+            // drift from a pre-0.3.0 credential), surface a visible marker
+            // instead of throwing into the Spectre render loop and taking
+            // down the list command.
             SoftwareOneCredential? credential;
             try
             {
@@ -36,9 +40,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 
             return
             [
+                new("Account", $"{credential.AccountName} ({credential.AccountType})"),
                 new("Actor", credential.Actor),
                 new("Base URL", credential.BaseUrl.ToString()),
-                new("Token", Mask(credential.ApiToken)),
+                new("Token", $"{Mask(credential.ApiToken)} — {credential.TokenName}"),
             ];
         }
 

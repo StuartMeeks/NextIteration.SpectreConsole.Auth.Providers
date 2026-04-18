@@ -14,7 +14,7 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
     }
 
     [Fact]
-    public void GetDisplayFields_ValidJson_ReturnsActorBaseUrlAndMaskedToken()
+    public void GetDisplayFields_ValidJson_ReturnsAccountActorBaseUrlAndMaskedToken()
     {
         var credential = new SoftwareOneCredential
         {
@@ -22,18 +22,24 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
             BaseUrl = new Uri("https://api.softwareone.com/"),
             Environment = "Production",
             Actor = "Operations",
+            TokenId = "TOK-001",
+            TokenName = "prod-deploy",
+            AccountId = "ACC-777",
+            AccountName = "Contoso GmbH",
+            AccountType = "Reseller",
         };
         var json = JsonSerializer.Serialize(credential, SoftwareOneCredential.JsonOptions);
         var provider = new SoftwareOneCredentialSummaryProvider();
 
         var fields = provider.GetDisplayFields(json);
 
-        Assert.Equal(3, fields.Count);
-        Assert.Equal(new KeyValuePair<string, string>("Actor", "Operations"), fields[0]);
-        Assert.Equal(new KeyValuePair<string, string>("Base URL", "https://api.softwareone.com/"), fields[1]);
-        Assert.Equal("Token", fields[2].Key);
-        // Long token: first four + ellipsis + last four.
-        Assert.Equal("abcd...xyz9", fields[2].Value);
+        Assert.Equal(4, fields.Count);
+        Assert.Equal(new KeyValuePair<string, string>("Account", "Contoso GmbH (Reseller)"), fields[0]);
+        Assert.Equal(new KeyValuePair<string, string>("Actor", "Operations"), fields[1]);
+        Assert.Equal(new KeyValuePair<string, string>("Base URL", "https://api.softwareone.com/"), fields[2]);
+        Assert.Equal("Token", fields[3].Key);
+        // Long token: first four + ellipsis + last four + token name suffix.
+        Assert.Equal("abcd...xyz9 — prod-deploy", fields[3].Value);
     }
 
     [Fact]
@@ -46,6 +52,11 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
             BaseUrl = new Uri("https://api.softwareone.com/"),
             Environment = "Production",
             Actor = "Operations",
+            TokenId = "TOK-001",
+            TokenName = "prod-deploy",
+            AccountId = "ACC-777",
+            AccountName = "Contoso GmbH",
+            AccountType = "Reseller",
         };
         var json = JsonSerializer.Serialize(credential, SoftwareOneCredential.JsonOptions);
         var provider = new SoftwareOneCredentialSummaryProvider();
@@ -53,22 +64,7 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
         var fields = provider.GetDisplayFields(json);
 
         var tokenField = fields.Single(f => f.Key == "Token");
-        Assert.Equal("****", tokenField.Value);
-    }
-
-    [Fact]
-    public void GetDisplayFields_EmptyToken_ReturnsEmptyString()
-    {
-        // Edge case: a deliberately constructed empty-token credential.
-        var payload = """
-            { "apiToken": "", "baseUrl": "https://x/", "environment": "Production", "actor": "Operations" }
-            """;
-        var provider = new SoftwareOneCredentialSummaryProvider();
-
-        var fields = provider.GetDisplayFields(payload);
-
-        var tokenField = fields.Single(f => f.Key == "Token");
-        Assert.Equal(string.Empty, tokenField.Value);
+        Assert.Equal("**** — prod-deploy", tokenField.Value);
     }
 
     [Fact]
@@ -91,6 +87,29 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
         var provider = new SoftwareOneCredentialSummaryProvider();
 
         var fields = provider.GetDisplayFields("null");
+
+        Assert.Single(fields);
+        Assert.Equal("Status", fields[0].Key);
+        Assert.Equal("<unreadable credential>", fields[0].Value);
+    }
+
+    [Fact]
+    public void GetDisplayFields_Pre030CredentialWithoutMetadata_ReturnsUnreadableMarker()
+    {
+        // A 0.2.0-era credential lacks the required metadata fields;
+        // deserialization throws JsonException, which the provider catches
+        // and surfaces as the unreadable marker.
+        var pre030 = """
+            {
+              "apiToken": "abc-123",
+              "baseUrl": "https://api.softwareone.com/",
+              "environment": "Production",
+              "actor": "Operations"
+            }
+            """;
+        var provider = new SoftwareOneCredentialSummaryProvider();
+
+        var fields = provider.GetDisplayFields(pre030);
 
         Assert.Single(fields);
         Assert.Equal("Status", fields[0].Key);

@@ -5,9 +5,21 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 {
     /// <summary>
     /// SoftwareOne Marketplace API-token credential. Carries the long-lived
-    /// portal-issued API token plus the base URL, environment, and the
-    /// actor role the token is scoped to.
+    /// portal-issued API token plus the base URL, environment, the actor
+    /// role the token is scoped to, and (as of 0.3.0) the SoftwareOne-side
+    /// metadata for the token: token id/name and the owning account's
+    /// id/name/type.
     /// </summary>
+    /// <remarks>
+    /// The metadata fields (<see cref="TokenId"/>, <see cref="TokenName"/>,
+    /// <see cref="AccountId"/>, <see cref="AccountName"/>, <see cref="AccountType"/>)
+    /// are populated by <see cref="SoftwareOneCredentialCollector"/> at
+    /// add-time via a live lookup against the SoftwareOne Marketplace API.
+    /// If the lookup finds exactly one matching token the credential is
+    /// stored; otherwise the collector fails and the credential is not
+    /// saved. The metadata is therefore always present on a stored 0.3.0+
+    /// credential and is safe to treat as required.
+    /// </remarks>
     public sealed class SoftwareOneCredential : ICredential
     {
         private const string SoftwareOneProviderName = "SoftwareOne";
@@ -41,6 +53,21 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         /// returned by <see cref="SupportedActors"/>.
         /// </summary>
         public required string Actor { get; init; }
+
+        /// <summary>SoftwareOne-side identifier for the API token (as returned by the Marketplace API).</summary>
+        public required string TokenId { get; init; }
+
+        /// <summary>Human-readable name of the API token as configured in the Marketplace portal.</summary>
+        public required string TokenName { get; init; }
+
+        /// <summary>SoftwareOne-side identifier for the account that owns the token.</summary>
+        public required string AccountId { get; init; }
+
+        /// <summary>Human-readable name of the account that owns the token.</summary>
+        public required string AccountName { get; init; }
+
+        /// <summary>Account type as reported by the Marketplace API (e.g. <c>Vendor</c>, <c>Client</c>, <c>Operations</c>).</summary>
+        public required string AccountType { get; init; }
 
         /// <inheritdoc cref="ICredential.SupportedEnvironments" />
         public static List<string> SupportedEnvironments => GetSupportedEnvironments();

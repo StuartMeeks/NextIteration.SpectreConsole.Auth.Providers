@@ -24,6 +24,7 @@ public sealed class ServiceCollectionExtensionsTests
     public void AddSoftwareOneAuthProvider_RegistersCollectorOnICredentialCollector()
     {
         var services = new ServiceCollection();
+        services.AddHttpClient();
 
         services.AddSoftwareOneAuthProvider();
 
@@ -40,6 +41,7 @@ public sealed class ServiceCollectionExtensionsTests
     public void AddSoftwareOneAuthProvider_RegistersSummaryProviderOnICredentialSummaryProvider()
     {
         var services = new ServiceCollection();
+        services.AddHttpClient();
 
         services.AddSoftwareOneAuthProvider();
 

@@ -9,6 +9,25 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## SoftwareOne — [0.3.0] — 2026-04-18
+
+_Applies to `NextIteration.SpectreConsole.Auth.Providers.SoftwareOne` only. Adobe and Airtable remain at 0.2.0._
+
+### Added
+- **Automatic token validation at `accounts add` time.** The collector now performs a live `GET {BaseUrl}/v1/accounts/api-tokens?eq(token,'…')&limit=2` against the SoftwareOne Marketplace API during add. If the lookup returns exactly one match the credential is stored; zero matches or multiple matches or any HTTP/transport error fails the command and the credential is **not** persisted.
+- **Credential enriched with Marketplace metadata**: five new required fields — `TokenId`, `TokenName`, `AccountId`, `AccountName`, `AccountType` — populated from the validated lookup response. The `accounts list` display now shows `Account` (`name (type)`) and `Token` (`masked fingerprint — tokenName`) as part of the primary identity.
+- **`SoftwareOneCredentialCollector.HttpClientName` const** (`"SoftwareOne Credential Validator"`) so consumers can pre-configure the named `HttpClient` (proxy, retry handler, user-agent).
+
+### Changed (breaking)
+- `SoftwareOneCredentialCollector` constructor now requires `IHttpClientFactory`. Consumers must call `services.AddHttpClient()` before `services.AddSoftwareOneAuthProvider()`.
+- `SoftwareOneCredential`'s five new metadata fields are `required` — **0.2.0-era keystores will fail to deserialize under 0.3.0** with a `JsonException` for missing required members. Migration = delete the old `Selections.json` + provider-specific credential files and re-run `accounts add` to re-register; the new store will be populated with the validated metadata.
+
+### Migration notes
+- Consumer apps must `services.AddHttpClient()` if they weren't already.
+- Users with stored 0.2.0 credentials must re-add. There's no auto-migration from the old schema because the new required metadata fields can't be inferred from the old credential alone — they come from the live API call.
+
+---
+
 ## [0.2.0] — 2026-04-18
 
 _Applies to Adobe, Airtable, and SoftwareOne._

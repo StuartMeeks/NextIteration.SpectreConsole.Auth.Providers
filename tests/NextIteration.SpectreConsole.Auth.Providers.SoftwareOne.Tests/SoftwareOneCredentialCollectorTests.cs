@@ -12,7 +12,8 @@ public sealed class SoftwareOneCredentialCollectorTests
     [Fact]
     public void ProviderName_MatchesCredential()
     {
-        var collector = new SoftwareOneCredentialCollector();
+        var collector = new SoftwareOneCredentialCollector(
+            StubHttpClientFactory.ReturningJson("""{ "data": [] }"""));
 
         Assert.Equal(SoftwareOneCredential.ProviderName, collector.ProviderName);
         Assert.Equal("SoftwareOne", collector.ProviderName);

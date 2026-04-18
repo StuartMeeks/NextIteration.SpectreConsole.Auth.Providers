@@ -45,6 +45,11 @@ public sealed class SoftwareOneCredentialTests
         Assert.Equal("https://api.softwareone.com/", root.GetProperty("baseUrl").GetString());
         Assert.Equal("Production", root.GetProperty("environment").GetString());
         Assert.Equal("Operations", root.GetProperty("actor").GetString());
+        Assert.Equal("TOK-001", root.GetProperty("tokenId").GetString());
+        Assert.Equal("prod-deploy", root.GetProperty("tokenName").GetString());
+        Assert.Equal("ACC-777", root.GetProperty("accountId").GetString());
+        Assert.Equal("Contoso GmbH", root.GetProperty("accountName").GetString());
+        Assert.Equal("Reseller", root.GetProperty("accountType").GetString());
     }
 
     [Fact]
@@ -60,15 +65,48 @@ public sealed class SoftwareOneCredentialTests
         Assert.Equal(original.BaseUrl, roundTripped.BaseUrl);
         Assert.Equal(original.Environment, roundTripped.Environment);
         Assert.Equal(original.Actor, roundTripped.Actor);
+        Assert.Equal(original.TokenId, roundTripped.TokenId);
+        Assert.Equal(original.TokenName, roundTripped.TokenName);
+        Assert.Equal(original.AccountId, roundTripped.AccountId);
+        Assert.Equal(original.AccountName, roundTripped.AccountName);
+        Assert.Equal(original.AccountType, roundTripped.AccountType);
     }
 
     [Fact]
     public void Deserialize_WithMissingRequiredField_Throws()
     {
-        // ApiToken intentionally omitted — required members should cause
+        // apiToken intentionally omitted — required members should cause
         // System.Text.Json to throw a JsonException at deserialization time.
         const string payload = """
-            { "baseUrl": "https://api.softwareone.com/", "environment": "Production", "actor": "Operations" }
+            {
+              "baseUrl": "https://api.softwareone.com/",
+              "environment": "Production",
+              "actor": "Operations",
+              "tokenId": "TOK-001",
+              "tokenName": "prod-deploy",
+              "accountId": "ACC-777",
+              "accountName": "Contoso GmbH",
+              "accountType": "Reseller"
+            }
+            """;
+
+        Assert.Throws<JsonException>(
+            () => JsonSerializer.Deserialize<SoftwareOneCredential>(payload, SoftwareOneCredential.JsonOptions));
+    }
+
+    [Fact]
+    public void Deserialize_WithPreviousSchemaMissingMetadata_Throws()
+    {
+        // A 0.2.0-era credential (pre-enrichment) is no longer deserialisable
+        // under 0.3.0 — the metadata fields are required. Migration requires
+        // deleting the old credential and re-adding via `accounts add`.
+        const string payload = """
+            {
+              "apiToken": "abc-123",
+              "baseUrl": "https://api.softwareone.com/",
+              "environment": "Production",
+              "actor": "Operations"
+            }
             """;
 
         Assert.Throws<JsonException>(
@@ -81,5 +119,10 @@ public sealed class SoftwareOneCredentialTests
         BaseUrl = new Uri("https://api.softwareone.com/"),
         Environment = "Production",
         Actor = "Operations",
+        TokenId = "TOK-001",
+        TokenName = "prod-deploy",
+        AccountId = "ACC-777",
+        AccountName = "Contoso GmbH",
+        AccountType = "Reseller",
     };
 }

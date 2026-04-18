@@ -74,7 +74,7 @@ public sealed class MarketplaceClient(SoftwareOneAuthenticationService auth, IHt
 
 ## What gets stored
 
-Each `accounts add` run serialises a `SoftwareOneCredential` into the encrypted keystore:
+Each `accounts add` run validates the supplied token against the Marketplace API and, on exactly one match, serialises a `SoftwareOneCredential` into the encrypted keystore:
 
 | Field         | Source              | Notes                                         |
 |---------------|---------------------|-----------------------------------------------|
@@ -82,14 +82,36 @@ Each `accounts add` run serialises a `SoftwareOneCredential` into the encrypted 
 | `BaseUrl`     | prompt (validated)  | Absolute http(s) URL, default `https://api.softwareone.com/` |
 | `Environment` | selection prompt    | `Production` / `Staging` / `Test`             |
 | `Actor`       | selection prompt    | `Operations` / `Vendor`                       |
+| `TokenId`     | API lookup          | SoftwareOne-side identifier for the token     |
+| `TokenName`   | API lookup          | Human-readable token name from the portal     |
+| `AccountId`   | API lookup          | SoftwareOne-side account identifier           |
+| `AccountName` | API lookup          | Human-readable account name                   |
+| `AccountType` | API lookup          | e.g. `Vendor`, `Client`, `Reseller`, `Operations` |
 
-The token never leaves the credential store unencrypted. `accounts list` renders a masked fingerprint (first four + last four characters) and four stars for anything shorter than 10 chars.
+The token never leaves the credential store unencrypted. `accounts list` renders the account as `name (type)`, the masked token fingerprint (first four + last four characters) followed by its friendly token name, plus actor and base URL.
 
 ---
 
 ## Authentication model
 
 SoftwareOne tokens are **long-lived** and issued out-of-band via the Marketplace portal — there's no exchange or refresh flow. `SoftwareOneAuthenticationService.AuthenticateAsync()` is therefore a pass-through: it deserialises the selected credential and projects it into a `SoftwareOneToken`. `IsExpired` is hard-coded to `false`, but tokens **can be revoked** in the portal — a revoked token surfaces as a 401 on the first API call. Consumers should treat 401 as "prompt for a fresh credential" rather than relying on `IsExpired`.
+
+### Add-time validation
+
+Before storing, the collector performs a live `GET {BaseUrl}/v1/accounts/api-tokens?eq(token,'…')&limit=2` authenticated with the user-supplied token. Three outcomes:
+
+- **Exactly one match** → the five `Token*` / `Account*` metadata fields are populated from the response and the credential is stored.
+- **Zero matches or multiple matches** → the command fails; the credential is not stored.
+- **HTTP error (network, non-2xx)** → the command fails; the credential is not stored.
+
+This front-loads the "is this token real?" check — no half-valid credentials sitting in the keystore waiting to 401 later. The validation uses a named `HttpClient` (`SoftwareOneCredentialCollector.HttpClientName`) so consumers can pre-configure it:
+
+```csharp
+services.AddHttpClient(SoftwareOneCredentialCollector.HttpClientName, c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(10);
+});
+```
 
 ---
 

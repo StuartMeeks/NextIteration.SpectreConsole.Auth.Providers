@@ -11,8 +11,8 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.SoftwareOne</PackageId>
-		<Version>0.2.0</Version>
-		<Description>SoftwareOne Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships SoftwareOneCredential, SoftwareOneToken, SoftwareOneAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt.</Description>
+		<Version>0.3.0</Version>
+		<Description>SoftwareOne Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships SoftwareOneCredential, SoftwareOneToken, SoftwareOneAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt. The collector performs a live lookup against the Marketplace API at add-time to validate the token and enrich the credential with the account and token metadata.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageOutputPath>C:\nuget-local\</PackageOutputPath>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
@@ -34,7 +34,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
 		<PackageReference Include="Spectre.Console" Version="0.55.2" />
 		<!--
 			Capped range: accept any patch/minor in the 0.x line, but

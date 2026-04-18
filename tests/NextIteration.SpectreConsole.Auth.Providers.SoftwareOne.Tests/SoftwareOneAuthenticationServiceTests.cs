@@ -15,13 +15,7 @@ public sealed class SoftwareOneAuthenticationServiceTests
     [Fact]
     public async Task AuthenticateAsync_WithCredential_ProjectsAllFieldsIntoToken()
     {
-        var credential = new SoftwareOneCredential
-        {
-            ApiToken = "abc-123",
-            BaseUrl = new Uri("https://api.softwareone.com/"),
-            Environment = "Production",
-            Actor = "Operations",
-        };
+        var credential = NewCredential();
         var service = new SoftwareOneAuthenticationService(new FakeCredentialManager());
 
         var token = await service.AuthenticateAsync(credential);
@@ -39,6 +33,52 @@ public sealed class SoftwareOneAuthenticationServiceTests
 
         await Assert.ThrowsAsync<ArgumentNullException>(
             () => service.AuthenticateAsync((SoftwareOneCredential)null!));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task AuthenticateAsync_WithWhitespaceApiToken_Throws(string apiToken)
+    {
+        var template = NewCredential();
+        var badCredential = new SoftwareOneCredential
+        {
+            ApiToken = apiToken,
+            BaseUrl = template.BaseUrl,
+            Environment = template.Environment,
+            Actor = template.Actor,
+            TokenId = template.TokenId,
+            TokenName = template.TokenName,
+            AccountId = template.AccountId,
+            AccountName = template.AccountName,
+            AccountType = template.AccountType,
+        };
+        var service = new SoftwareOneAuthenticationService(new FakeCredentialManager());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.AuthenticateAsync(badCredential));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task AuthenticateAsync_WithWhitespaceAccountName_Throws(string accountName)
+    {
+        var credential = NewCredential();
+        var badCredential = new SoftwareOneCredential
+        {
+            ApiToken = credential.ApiToken,
+            BaseUrl = credential.BaseUrl,
+            Environment = credential.Environment,
+            Actor = credential.Actor,
+            TokenId = credential.TokenId,
+            TokenName = credential.TokenName,
+            AccountId = credential.AccountId,
+            AccountName = accountName,
+            AccountType = credential.AccountType,
+        };
+        var service = new SoftwareOneAuthenticationService(new FakeCredentialManager());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.AuthenticateAsync(badCredential));
     }
 
     [Fact]
@@ -78,6 +118,11 @@ public sealed class SoftwareOneAuthenticationServiceTests
             BaseUrl = new Uri("https://staging.softwareone.com/"),
             Environment = "Staging",
             Actor = "Vendor",
+            TokenId = "TOK-001",
+            TokenName = "stage-deploy",
+            AccountId = "ACC-222",
+            AccountName = "Contoso UK",
+            AccountType = "Reseller",
         };
         var manager = new FakeCredentialManager
         {
@@ -116,4 +161,17 @@ public sealed class SoftwareOneAuthenticationServiceTests
         await Assert.ThrowsAsync<ArgumentNullException>(
             () => service.ValidateTokenAsync(null!));
     }
+
+    private static SoftwareOneCredential NewCredential() => new()
+    {
+        ApiToken = "abc-123",
+        BaseUrl = new Uri("https://api.softwareone.com/"),
+        Environment = "Production",
+        Actor = "Operations",
+        TokenId = "TOK-001",
+        TokenName = "prod-deploy",
+        AccountId = "ACC-777",
+        AccountName = "Contoso GmbH",
+        AccountType = "Reseller",
+    };
 }
