@@ -50,7 +50,10 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: nuget-packages
-          path: ${{ github.workspace }}/artifacts/*.nupkg
+          # Capture both .nupkg and .snupkg so the publish job's
+          # `dotnet nuget push *.nupkg` can also push the matching
+          # symbol package next to it.
+          path: ${{ github.workspace }}/artifacts/*nupkg
 
   # Publishes a single provider's nupkg to nuget.org. Fired by tag push
   # only — per-package tag prefixes (adobe-v*, airtable-v*, softwareone-v*)

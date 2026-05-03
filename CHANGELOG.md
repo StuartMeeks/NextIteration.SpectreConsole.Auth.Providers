@@ -9,6 +9,26 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.2 / 0.2.2 / 0.3.2] — 2026-05-03
+
+_Adobe → 0.2.2, Airtable → 0.2.2, SoftwareOne → 0.3.2. Coordinated patch release across the four sibling repos to fix symbol-package publishing._
+
+### Changed
+- **Symbol packaging.** Switched `<DebugType>` from `embedded` to `portable`
+  in all three provider csprojs so the published `.snupkg` actually
+  contains `.pdb` files. The previous combination produced an empty
+  `.snupkg`; nuget.org rejects empty symbol packages with HTTP 400.
+  Until now the workflow's `upload-artifact` filter (`*.nupkg`) silently
+  dropped the broken symbol package on its way to the publish job, so
+  the failure stayed invisible — but no symbols ever reached nuget.org's
+  symbol server. Consumers debugging into any of the providers now get
+  sources via the symbol server out of the box.
+- **CI artifact path.** `upload-artifact` now captures `*nupkg` (both
+  `.nupkg` and `.snupkg`) so the publish job pushes both files for the
+  package matching the tag prefix.
+
+---
+
 ## [0.2.1 / 0.2.1 / 0.3.1] — 2026-05-03
 
 _Adobe → 0.2.1, Airtable → 0.2.1, SoftwareOne → 0.3.1. Coordinated patch release driven by an external security review._
