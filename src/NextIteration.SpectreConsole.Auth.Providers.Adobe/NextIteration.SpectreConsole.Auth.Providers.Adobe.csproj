@@ -11,10 +11,8 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.Adobe</PackageId>
-		<Version>0.2.0</Version>
+		<Version>0.2.1</Version>
 		<Description>Adobe VIP Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships AdobeCredential, AdobeToken, AdobeAuthenticationService (OAuth2 client-credentials against Adobe IMS), and the Spectre.Console collector that drives the accounts-add prompt.</Description>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageOutputPath>C:\nuget-local\</PackageOutputPath>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -34,17 +32,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
-		<PackageReference Include="Spectre.Console" Version="0.55.2" />
-		<!--
-			Capped range: accept any patch/minor in the 0.x line, but
-			prevent silent upgrade to 1.0.0 where the ICredentialCollector /
-			ICredentialSummaryProvider contracts could break. Bump the upper
-			bound deliberately after validating against the next major.
-		-->
-		<PackageReference Include="NextIteration.SpectreConsole.Auth" Version="[0.5.0,1.0.0)" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+		<InternalsVisibleTo Include="NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Versions live in /Directory.Packages.props (CPM). -->
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Http" />
+		<PackageReference Include="Spectre.Console" />
+		<PackageReference Include="NextIteration.SpectreConsole.Auth" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
 		<None Include="README.md" Pack="true" PackagePath="\" />
 		<None Include="icon.png" Pack="true" PackagePath="" />
 	</ItemGroup>

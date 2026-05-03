@@ -29,7 +29,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             var imsUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter IMS URL:")
                     .DefaultValue(DefaultImsUrl)
-                    .Validate(ValidateHttpUrl)).ConfigureAwait(false);
+                    .Validate(ValidateSecureUrl)).ConfigureAwait(false);
 
             var apiKey = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter API Key (OAuth2 client_id):")
@@ -43,7 +43,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             var baseUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Base URL:")
                     .DefaultValue(DefaultBaseUrl)
-                    .Validate(ValidateHttpUrl)).ConfigureAwait(false);
+                    .Validate(ValidateSecureUrl)).ConfigureAwait(false);
 
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
@@ -62,11 +62,32 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             return (JsonSerializer.Serialize(credential, AdobeCredential.JsonOptions), credential.Environment);
         }
 
-        private static ValidationResult ValidateHttpUrl(string value)
-            => Uri.TryCreate(value, UriKind.Absolute, out var parsed)
-                && (parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps)
-                    ? ValidationResult.Success()
-                    : ValidationResult.Error("Must be a valid absolute http(s) URL");
+        /// <summary>
+        /// Accept the URL only if it's an absolute https URI, or an http
+        /// loopback (so devs can point the collector at a local mock or
+        /// proxy without compromising the OAuth2 client secret over the
+        /// wire in real deployments).
+        /// </summary>
+        internal static ValidationResult ValidateSecureUrl(string value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var parsed))
+            {
+                return ValidationResult.Error("Must be a valid absolute http(s) URL");
+            }
+
+            if (parsed.Scheme == Uri.UriSchemeHttps)
+            {
+                return ValidationResult.Success();
+            }
+
+            if (parsed.Scheme == Uri.UriSchemeHttp && parsed.IsLoopback)
+            {
+                return ValidationResult.Success();
+            }
+
+            return ValidationResult.Error(
+                "Must use https. http is only accepted for loopback addresses (the OAuth2 client secret is POSTed to this URL and must not traverse the network in cleartext).");
+        }
 
         private static Func<string, ValidationResult> ValidateNonEmpty(string fieldName)
             => value => string.IsNullOrWhiteSpace(value)

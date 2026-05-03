@@ -15,6 +15,9 @@ internal sealed class FakeCredentialManager : ICredentialManager
     public Task<string?> GetSelectedCredentialAsync(string providerName)
         => Task.FromResult(SelectedCredentialJson);
 
+    public Task<string?> GetCredentialByIdAsync(string providerName, string accountId)
+        => throw new NotSupportedException();
+
     public Task<IEnumerable<CredentialSummary>> ListCredentialsAsync(string providerName)
         => throw new NotSupportedException();
 

@@ -30,6 +30,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
 
         private const string DefaultScopes = "openid,AdobeID,read_organizations";
 
+        // Hard cap on the response-body slice we surface in exceptions.
+        // Keeps useful "invalid_client"-style payloads visible while
+        // bounding the size that lands in logs / aggregators.
+        internal const int ErrorBodyMaxChars = 512;
+
         private readonly ICredentialManager _credentialManager;
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -94,9 +99,13 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             {
                 // Include the IMS response body in the error so callers can
                 // see e.g. {"error":"invalid_client","error_description":"..."}
-                // rather than just a bare status code.
+                // rather than just a bare status code — but truncate so an
+                // upstream proxy that echoes the full request can't bloat
+                // logs (and bound the unlikely case of credential material
+                // making it back into the error body).
+                var safeBody = TruncateErrorBody(responseBody);
                 throw new HttpRequestException(
-                    $"Adobe IMS token request failed: {(int)response.StatusCode} {response.StatusCode}. Body: {responseBody}");
+                    $"Adobe IMS token request failed: {(int)response.StatusCode} {response.StatusCode}. Body: {safeBody}");
             }
 
             var dto = JsonSerializer.Deserialize<AdobeTokenDto>(responseBody)
@@ -151,6 +160,45 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
                     $"{nameof(AdobeCredential.Environment)} is required and must not be whitespace.",
                     nameof(credential));
             }
+
+            // The collector enforces https-or-loopback on input, but a
+            // hand-edited keystore could downgrade either URL to plain
+            // http. Re-check before sending the client secret over the
+            // wire — refusing here closes the gap.
+            RequireSecureUrl(credential.ImsUrl, nameof(AdobeCredential.ImsUrl));
+            RequireSecureUrl(credential.BaseUrl, nameof(AdobeCredential.BaseUrl));
+
+            static void RequireSecureUrl(Uri url, string fieldName)
+            {
+                if (url.Scheme == Uri.UriSchemeHttps)
+                {
+                    return;
+                }
+
+                if (url.Scheme == Uri.UriSchemeHttp && url.IsLoopback)
+                {
+                    return;
+                }
+
+                throw new ArgumentException(
+                    $"{fieldName} must use https (http is only accepted for loopback addresses).",
+                    fieldName);
+            }
+        }
+
+        /// <summary>
+        /// Truncate the IMS error body to <see cref="ErrorBodyMaxChars"/>
+        /// before it lands in an exception message. Bounds the size of
+        /// anything that gets logged downstream.
+        /// </summary>
+        internal static string TruncateErrorBody(string body)
+        {
+            if (string.IsNullOrEmpty(body) || body.Length <= ErrorBodyMaxChars)
+            {
+                return body;
+            }
+
+            return string.Concat(body.AsSpan(0, ErrorBodyMaxChars), "… [truncated]");
         }
 
         /// <summary>

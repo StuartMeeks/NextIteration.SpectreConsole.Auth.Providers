@@ -82,6 +82,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
             RequireNonWhitespace(credential.AccountName, nameof(SoftwareOneCredential.AccountName));
             RequireNonWhitespace(credential.AccountType, nameof(SoftwareOneCredential.AccountType));
 
+            // Re-check the URL scheme even on the auth path. The collector
+            // already enforces https-or-loopback, but a hand-edited keystore
+            // file could downgrade BaseUrl to plain http. Refusing here
+            // prevents the token from being shipped over a cleartext channel.
+            RequireSecureUrl(credential.BaseUrl, nameof(SoftwareOneCredential.BaseUrl));
+
             // Local helper — `fieldName` is the paramName so CA2208 is happy.
             // The field shows up as the ArgumentException.ParamName, which
             // matches what consumers would expect ("which field was bad?").
@@ -93,6 +99,23 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                         $"{fieldName} is required and must not be whitespace.",
                         fieldName);
                 }
+            }
+
+            static void RequireSecureUrl(Uri url, string fieldName)
+            {
+                if (url.Scheme == Uri.UriSchemeHttps)
+                {
+                    return;
+                }
+
+                if (url.Scheme == Uri.UriSchemeHttp && url.IsLoopback)
+                {
+                    return;
+                }
+
+                throw new ArgumentException(
+                    $"{fieldName} must use https (http is only accepted for loopback addresses).",
+                    fieldName);
             }
         }
     }

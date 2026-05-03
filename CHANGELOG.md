@@ -9,6 +9,28 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1 / 0.2.1 / 0.3.1] — 2026-05-03
+
+_Adobe → 0.2.1, Airtable → 0.2.1, SoftwareOne → 0.3.1. Coordinated patch release driven by an external security review._
+
+### Security
+- **Reject plain `http` for credential-bearing endpoints.** The Adobe and SoftwareOne collectors and authentication services now require `https` for the IMS URL, the Adobe API base URL, and the SoftwareOne API base URL. `http` is accepted only when the host is a loopback address, so local mock servers and proxies still work during development. The same check runs in the authentication services on every call, so a hand-edited keystore that downgrades a stored credential to `http` is rejected before any request is sent. This closes the specific risk that the SoftwareOne collector ships the API token in the URL query (`eq(token,'…')`) — over plain `http` that token would otherwise traverse the network in cleartext and land in any intermediate access log.
+- **Sanitise response bodies before they reach exception messages.** When the SoftwareOne lookup or the Adobe IMS exchange returns a non-success status, the error path used to inline the raw response body verbatim. Both providers now truncate the body to 512 characters before constructing the exception, and the SoftwareOne path additionally redacts the literal token value out of the body — defending against a misbehaving upstream proxy that echoes the request URL (which carries the token in the query string) into an error page that would otherwise reach exception aggregators and log files.
+- Airtable carries no URL prompt and made no IMS-style call, so its 0.2.1 picks up the cross-cutting DI / packaging fixes only.
+
+### Changed
+- **Register the `IAuthenticationService<TCredential, TToken>` interface mapping** for all three providers. Previously only the concrete `XxxAuthenticationService` was registered with DI, so consumers depending on the abstraction got a runtime resolution failure. The interface registration forwards to the same singleton instance, so this is purely additive — existing consumers depending on the concrete type are unaffected.
+- **Core library reference bumped from `[0.5.0,1.0.0)` to `[0.6.1,1.0.0)`.** Picks up the latest core release published to nuget.org. The cap stays on the next major so a breaking 1.0 of the core package doesn't auto-flow into provider consumers — bump the upper bound deliberately when validating against the next major.
+
+### Fixed
+- **Stop auto-packing on every build.** The csprojs previously set `GeneratePackageOnBuild=true` with a hardcoded Windows-only `PackageOutputPath` (`C:\nuget-local\`). On non-Windows hosts that path was interpreted as a project-relative directory called `C:\nuget-local\`; on every host the auto-pack ran during `dotnet test`, which is wasteful and meant ordinary local development was producing release nupkgs as a side effect. Both properties are removed; CI now invokes `dotnet pack` explicitly per provider.
+
+### Migration notes
+- Consumer apps need no source changes. The DI registration is purely additive; the `https`-only enforcement only rejects URLs you should not have been using to begin with.
+- If you were relying on the auto-generated nupkgs landing in the project tree from a local build, switch to `dotnet pack <project> --output ./artifacts` instead.
+
+---
+
 ## SoftwareOne — [0.3.0] — 2026-04-18
 
 _Applies to `NextIteration.SpectreConsole.Auth.Providers.SoftwareOne` only. Adobe and Airtable remain at 0.2.0._
@@ -96,6 +118,7 @@ _SoftwareOne Marketplace API token — pass-through._
 - Per-package NuGet metadata: MIT license expression, SourceLink, deterministic builds, embedded symbols, snupkg, capped version ranges for cross-package dependencies.
 - GitHub Actions CI with per-package tag-triggered publishing (`adobe-v*` → publishes Adobe only, etc.).
 
+[0.2.1 / 0.2.1 / 0.3.1]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.1.1]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.1.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases

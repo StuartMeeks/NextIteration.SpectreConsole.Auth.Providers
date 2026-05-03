@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NextIteration.SpectreConsole.Auth.Commands;
 using NextIteration.SpectreConsole.Auth.Persistence;
+using NextIteration.SpectreConsole.Auth.Services;
 using Xunit;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests;
@@ -63,5 +64,34 @@ public sealed class ServiceCollectionExtensionsTests
         var a = sp.GetRequiredService<SoftwareOneAuthenticationService>();
         var b = sp.GetRequiredService<SoftwareOneAuthenticationService>();
         Assert.Same(a, b);
+    }
+
+    [Fact]
+    public void AddSoftwareOneAuthProvider_ResolvesAuthenticationServiceViaInterface()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ICredentialManager, FakeCredentialManager>();
+        services.AddHttpClient();
+
+        services.AddSoftwareOneAuthProvider();
+
+        using var sp = services.BuildServiceProvider();
+        var viaInterface = sp.GetRequiredService<IAuthenticationService<SoftwareOneCredential, SoftwareOneToken>>();
+        Assert.IsType<SoftwareOneAuthenticationService>(viaInterface);
+    }
+
+    [Fact]
+    public void AddSoftwareOneAuthProvider_InterfaceForwardsToSameSingletonAsConcrete()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ICredentialManager, FakeCredentialManager>();
+        services.AddHttpClient();
+
+        services.AddSoftwareOneAuthProvider();
+
+        using var sp = services.BuildServiceProvider();
+        var concrete = sp.GetRequiredService<SoftwareOneAuthenticationService>();
+        var viaInterface = sp.GetRequiredService<IAuthenticationService<SoftwareOneCredential, SoftwareOneToken>>();
+        Assert.Same(concrete, viaInterface);
     }
 }
