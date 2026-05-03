@@ -30,12 +30,21 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        # Override PackageOutputPath so the auto-generated .nupkg lands in
-        # ./artifacts instead of the Windows-path the csprojs hardcode.
-        run: dotnet build --configuration Release --no-restore -p:PackageOutputPath=${{ github.workspace }}/artifacts
+        run: dotnet build --configuration Release --no-restore
 
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Pack
+        # Pack each provider explicitly. The csprojs no longer auto-pack on
+        # build, so this step is the single point at which nupkgs / snupkgs
+        # are produced for downstream consumption (publish job + uploaded
+        # artifact). --no-build is safe because the build step above ran in
+        # the same Release configuration.
+        run: |
+          dotnet pack src/NextIteration.SpectreConsole.Auth.Providers.Adobe       --configuration Release --no-build --output ${{ github.workspace }}/artifacts
+          dotnet pack src/NextIteration.SpectreConsole.Auth.Providers.Airtable    --configuration Release --no-build --output ${{ github.workspace }}/artifacts
+          dotnet pack src/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne --configuration Release --no-build --output ${{ github.workspace }}/artifacts
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v6

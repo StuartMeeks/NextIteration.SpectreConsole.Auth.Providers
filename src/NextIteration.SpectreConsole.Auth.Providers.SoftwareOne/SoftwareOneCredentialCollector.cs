@@ -52,6 +52,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         private static readonly JsonSerializerOptions TokenLookupJsonOptions
             = new() { PropertyNameCaseInsensitive = true };
 
+        // Hard cap on the response-body slice we surface in exceptions.
+        // Big enough to keep useful "invalid_token"-style payloads, small
+        // enough that an upstream proxy echoing the full request can't bloat
+        // logs or sneak a credential past our redaction.
+        internal const int ErrorBodyMaxChars = 512;
+
         private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>DI constructor.</summary>
@@ -77,10 +83,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
             var baseUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Base URL:")
                     .DefaultValue(DefaultBaseUrl)
-                    .Validate(value => Uri.TryCreate(value, UriKind.Absolute, out var parsed)
-                            && (parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps)
-                        ? ValidationResult.Success()
-                        : ValidationResult.Error("Must be a valid absolute http(s) URL"))).ConfigureAwait(false);
+                    .Validate(ValidateSecureBaseUrl)).ConfigureAwait(false);
 
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
@@ -143,8 +146,14 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 
             if (!response.IsSuccessStatusCode)
             {
+                // Sanitise before surfacing: a misbehaving upstream proxy can
+                // echo the request URL — which carries the token in the
+                // eq(token,'…') query — back into an error page. Redact the
+                // literal token and cap the slice we keep so neither logs
+                // nor exception aggregators receive credential material.
+                var safeBody = SanitiseErrorBody(responseBody, apiToken);
                 throw new InvalidOperationException(
-                    $"SoftwareOne token lookup failed: {(int)response.StatusCode} {response.StatusCode}. Body: {responseBody}");
+                    $"SoftwareOne token lookup failed: {(int)response.StatusCode} {response.StatusCode}. Body: {safeBody}");
             }
 
             var result = JsonSerializer.Deserialize<SoftwareOneTokenSearchResult>(responseBody, TokenLookupJsonOptions)
@@ -164,6 +173,59 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
             }
 
             return result.Data[0];
+        }
+
+        /// <summary>
+        /// Accept the URL only if it's an absolute https URI, or an
+        /// http loopback (so devs can point the collector at a local
+        /// mock or proxy without compromising the token over the wire
+        /// in real deployments).
+        /// </summary>
+        internal static ValidationResult ValidateSecureBaseUrl(string value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var parsed))
+            {
+                return ValidationResult.Error("Must be a valid absolute http(s) URL");
+            }
+
+            if (parsed.Scheme == Uri.UriSchemeHttps)
+            {
+                return ValidationResult.Success();
+            }
+
+            if (parsed.Scheme == Uri.UriSchemeHttp && parsed.IsLoopback)
+            {
+                return ValidationResult.Success();
+            }
+
+            return ValidationResult.Error(
+                "Must use https. http is only accepted for loopback addresses (the SoftwareOne API token is sent in the URL query and must not traverse the network in cleartext).");
+        }
+
+        /// <summary>
+        /// Strip the literal token value from the response body and
+        /// truncate to <see cref="ErrorBodyMaxChars"/>. The token is
+        /// what we're trying to prevent from leaking into logs; the
+        /// truncation bounds size for everything else (memory pressure,
+        /// noise in aggregators).
+        /// </summary>
+        internal static string SanitiseErrorBody(string body, string apiToken)
+        {
+            if (string.IsNullOrEmpty(body))
+            {
+                return body;
+            }
+
+            var redacted = string.IsNullOrEmpty(apiToken)
+                ? body
+                : body.Replace(apiToken, "<redacted>", StringComparison.Ordinal);
+
+            if (redacted.Length <= ErrorBodyMaxChars)
+            {
+                return redacted;
+            }
+
+            return string.Concat(redacted.AsSpan(0, ErrorBodyMaxChars), "… [truncated]");
         }
     }
 }

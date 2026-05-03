@@ -154,6 +154,71 @@ public sealed class AdobeAuthenticationServiceTests
     }
 
     [Fact]
+    public async Task AuthenticateAsync_WhenImsReturnsLargeErrorBody_TruncatesItInException()
+    {
+        // Build a body well over the 512-char cap so the exception message
+        // ends up bounded in size — keeps log noise low if an upstream proxy
+        // echoes the full request back.
+        var bigBody = new string('x', 4000);
+        var http = StubHttpClientFactory.ReturningJson(bigBody, HttpStatusCode.BadGateway);
+        var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => service.AuthenticateAsync(NewCredential()));
+
+        Assert.Contains("[truncated]", ex.Message, StringComparison.Ordinal);
+        // The status preamble plus "[truncated]" suffix push the message a
+        // bit past 512, but it should be far short of the 4000-char body.
+        Assert.True(ex.Message.Length < 1024, $"Expected truncated message, was {ex.Message.Length} chars");
+    }
+
+    [Theory]
+    [InlineData("http://ims-na1.adobelogin.com/", "https://partners.adobe.io/")]
+    [InlineData("https://ims-na1.adobelogin.com/", "http://partners.adobe.io/")]
+    public async Task AuthenticateAsync_RejectsCredentialWithCleartextHttpUrl(string imsUrl, string baseUrl)
+    {
+        // A hand-edited keystore that downgrades either URL to cleartext
+        // http should be rejected before any token leaves the process.
+        var http = StubHttpClientFactory.ReturningJson("{}");
+        var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+        var credential = new AdobeCredential
+        {
+            ImsUrl = new Uri(imsUrl, UriKind.Absolute),
+            ApiKey = "abc-api-key",
+            ClientSecret = "super-secret",
+            BaseUrl = new Uri(baseUrl, UriKind.Absolute),
+            Environment = "Production",
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.AuthenticateAsync(credential));
+        Assert.Null(http.LastRequest);
+    }
+
+    [Fact]
+    public async Task AuthenticateAsync_AllowsHttpLoopback()
+    {
+        // Loopback http stays usable so devs can point the auth service at
+        // a local mock IMS — the credential never leaves the box.
+        var http = StubHttpClientFactory.ReturningJson("""
+            { "access_token": "at", "token_type": "bearer", "expires_in": 3600 }
+            """);
+        var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+        var credential = new AdobeCredential
+        {
+            ImsUrl = new Uri("http://127.0.0.1:5000/"),
+            ApiKey = "abc-api-key",
+            ClientSecret = "super-secret",
+            BaseUrl = new Uri("http://localhost:6000/"),
+            Environment = "Sandbox",
+        };
+
+        var token = await service.AuthenticateAsync(credential);
+
+        Assert.Equal("at", token.AccessToken);
+        Assert.Equal(new Uri("http://localhost:6000/"), token.BaseUrl);
+    }
+
+    [Fact]
     public async Task AuthenticateAsync_NoCredentialSelected_Throws()
     {
         var http = StubHttpClientFactory.ReturningJson("{}");

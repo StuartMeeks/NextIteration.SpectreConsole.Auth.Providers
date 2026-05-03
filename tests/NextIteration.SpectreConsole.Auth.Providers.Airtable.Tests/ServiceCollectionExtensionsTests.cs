@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NextIteration.SpectreConsole.Auth.Commands;
 using NextIteration.SpectreConsole.Auth.Persistence;
+using NextIteration.SpectreConsole.Auth.Services;
 using Xunit;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests;
@@ -61,5 +62,32 @@ public sealed class ServiceCollectionExtensionsTests
         var a = sp.GetRequiredService<AirtableAuthenticationService>();
         var b = sp.GetRequiredService<AirtableAuthenticationService>();
         Assert.Same(a, b);
+    }
+
+    [Fact]
+    public void AddAirtableAuthProvider_ResolvesAuthenticationServiceViaInterface()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ICredentialManager, FakeCredentialManager>();
+
+        services.AddAirtableAuthProvider();
+
+        using var sp = services.BuildServiceProvider();
+        var viaInterface = sp.GetRequiredService<IAuthenticationService<AirtableCredential, AirtableToken>>();
+        Assert.IsType<AirtableAuthenticationService>(viaInterface);
+    }
+
+    [Fact]
+    public void AddAirtableAuthProvider_InterfaceForwardsToSameSingletonAsConcrete()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ICredentialManager, FakeCredentialManager>();
+
+        services.AddAirtableAuthProvider();
+
+        using var sp = services.BuildServiceProvider();
+        var concrete = sp.GetRequiredService<AirtableAuthenticationService>();
+        var viaInterface = sp.GetRequiredService<IAuthenticationService<AirtableCredential, AirtableToken>>();
+        Assert.Same(concrete, viaInterface);
     }
 }

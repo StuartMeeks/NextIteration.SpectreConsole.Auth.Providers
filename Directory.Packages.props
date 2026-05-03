@@ -1,0 +1,43 @@
+<Project>
+
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<!--
+			Hard-fail if a csproj declares <PackageReference Version="…" />
+			alongside CPM. Catches drift if someone adds a per-project pin
+			by accident — without this, MSBuild silently ignores the inline
+			version and uses the CPM one, which is the bug we're trying to
+			make impossible.
+		-->
+		<CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+	</PropertyGroup>
+
+	<!-- Runtime dependencies (shipped in provider packages). -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.5" />
+		<PackageVersion Include="Spectre.Console" Version="0.55.2" />
+		<!--
+			Capped range: accept any patch/minor in the 0.x line, but
+			prevent silent upgrade to 1.0.0 where the ICredentialCollector /
+			ICredentialSummaryProvider contracts could break. Bump the upper
+			bound deliberately after validating against the next major.
+		-->
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.6.1,1.0.0)" />
+	</ItemGroup>
+
+	<!-- Build / source-link tooling (PrivateAssets in csprojs). -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+	</ItemGroup>
+
+	<!-- Test-only dependencies. -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+		<PackageVersion Include="xunit" Version="2.9.2" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+		<PackageVersion Include="coverlet.collector" Version="6.0.2" />
+	</ItemGroup>
+
+</Project>

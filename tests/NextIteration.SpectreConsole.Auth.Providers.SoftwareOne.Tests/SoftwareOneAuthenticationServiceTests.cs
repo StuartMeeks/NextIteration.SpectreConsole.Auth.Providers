@@ -139,6 +139,52 @@ public sealed class SoftwareOneAuthenticationServiceTests
     }
 
     [Fact]
+    public async Task AuthenticateAsync_RejectsCredentialWithCleartextHttpBaseUrl()
+    {
+        // A hand-edited keystore that downgrades BaseUrl to plain http
+        // should be rejected before any token leaves the process.
+        var template = NewCredential();
+        var bad = new SoftwareOneCredential
+        {
+            ApiToken = template.ApiToken,
+            BaseUrl = new Uri("http://api.softwareone.com/"),
+            Environment = template.Environment,
+            Actor = template.Actor,
+            TokenId = template.TokenId,
+            TokenName = template.TokenName,
+            AccountId = template.AccountId,
+            AccountName = template.AccountName,
+            AccountType = template.AccountType,
+        };
+        var service = new SoftwareOneAuthenticationService(new FakeCredentialManager());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.AuthenticateAsync(bad));
+    }
+
+    [Fact]
+    public async Task AuthenticateAsync_AllowsHttpLoopback()
+    {
+        var template = NewCredential();
+        var loopback = new SoftwareOneCredential
+        {
+            ApiToken = template.ApiToken,
+            BaseUrl = new Uri("http://127.0.0.1:6000/"),
+            Environment = template.Environment,
+            Actor = template.Actor,
+            TokenId = template.TokenId,
+            TokenName = template.TokenName,
+            AccountId = template.AccountId,
+            AccountName = template.AccountName,
+            AccountType = template.AccountType,
+        };
+        var service = new SoftwareOneAuthenticationService(new FakeCredentialManager());
+
+        var token = await service.AuthenticateAsync(loopback);
+
+        Assert.Equal(new Uri("http://127.0.0.1:6000/"), token.BaseUrl);
+    }
+
+    [Fact]
     public async Task ValidateTokenAsync_ReturnsTrue_ForNonExpiredToken()
     {
         var token = new SoftwareOneToken

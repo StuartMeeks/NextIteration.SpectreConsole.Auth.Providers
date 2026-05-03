@@ -122,6 +122,110 @@ public sealed class SoftwareOneCredentialCollectorLookupTests
     }
 
     [Fact]
+    public async Task LookupTokenAsync_HttpError_RedactsTokenFromBody()
+    {
+        // Simulate a misbehaving upstream proxy that echoes the request URL
+        // (which carries the token in the eq(token,'…') query) back into the
+        // error body. The collector must redact the token before it lands in
+        // the exception message — otherwise the credential leaks via logs.
+        const string tokenValue = "tok-secret-12345";
+        var http = StubHttpClientFactory.ReturningJson(
+            $$"""{ "error": "bad gateway", "request_url": "/v1/accounts/api-tokens?eq(token,'{{tokenValue}}')&limit=2" }""",
+            HttpStatusCode.BadGateway);
+        var collector = new SoftwareOneCredentialCollector(http);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => collector.LookupTokenAsync(BaseUrl, tokenValue));
+
+        Assert.DoesNotContain(tokenValue, ex.Message, StringComparison.Ordinal);
+        Assert.Contains("<redacted>", ex.Message, StringComparison.Ordinal);
+        // The non-credential context ("bad gateway") should still be visible
+        // — diagnostics aren't sacrificed for sanitisation.
+        Assert.Contains("bad gateway", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LookupTokenAsync_HttpError_TruncatesLargeBody()
+    {
+        var bigBody = new string('y', 4000);
+        var http = StubHttpClientFactory.ReturningJson(bigBody, HttpStatusCode.InternalServerError);
+        var collector = new SoftwareOneCredentialCollector(http);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+
+        Assert.Contains("[truncated]", ex.Message, StringComparison.Ordinal);
+        Assert.True(ex.Message.Length < 1024, $"Expected truncated message, was {ex.Message.Length} chars");
+    }
+
+    [Fact]
+    public void SanitiseErrorBody_RedactsTokenWithinKeptWindowAndTruncates()
+    {
+        // Token sits well inside the first 512 chars so it's both redacted
+        // and visible after truncation. Covers the common case: a small
+        // error envelope wrapped in a much larger HTML page from a proxy.
+        var body = new string('a', 200) + "tok-xyz" + new string('b', 1000);
+        var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(body, "tok-xyz");
+
+        Assert.DoesNotContain("tok-xyz", sanitised, StringComparison.Ordinal);
+        Assert.Contains("<redacted>", sanitised, StringComparison.Ordinal);
+        Assert.EndsWith("[truncated]", sanitised, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SanitiseErrorBody_TokenPastTruncationBoundary_StillRemovedFromOutput()
+    {
+        // Pathological case: token sits past the 512-char cap. Redaction
+        // happens before truncation, but the truncated tail is dropped
+        // entirely — so even though the literal "<redacted>" marker isn't
+        // visible in the kept window, the token itself MUST NOT be either.
+        var body = new string('a', 600) + "tok-xyz" + new string('b', 600);
+        var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(body, "tok-xyz");
+
+        Assert.DoesNotContain("tok-xyz", sanitised, StringComparison.Ordinal);
+        Assert.EndsWith("[truncated]", sanitised, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("https://api.softwareone.com/")]
+    [InlineData("https://test.softwareone.com:8443/")]
+    public void ValidateSecureBaseUrl_AcceptsHttps(string url)
+    {
+        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+        Assert.True(result.Successful);
+    }
+
+    [Theory]
+    [InlineData("http://127.0.0.1:8080/")]
+    [InlineData("http://localhost:5000/")]
+    public void ValidateSecureBaseUrl_AcceptsHttpLoopback(string url)
+    {
+        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+        Assert.True(result.Successful);
+    }
+
+    [Theory]
+    [InlineData("http://api.softwareone.com/")]
+    [InlineData("http://example.com/")]
+    public void ValidateSecureBaseUrl_RejectsCleartextHttpForNonLoopback(string url)
+    {
+        // The token rides in the URL query — cleartext http would expose it
+        // on every hop and in any access log.
+        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+        Assert.False(result.Successful);
+        Assert.Contains("https", result.Message ?? string.Empty, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("ftp://example.com/")]
+    [InlineData("not-a-url")]
+    public void ValidateSecureBaseUrl_RejectsNonHttpSchemesAndGarbage(string url)
+    {
+        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+        Assert.False(result.Successful);
+    }
+
+    [Fact]
     public async Task LookupTokenAsync_MalformedJson_Throws()
     {
         var http = StubHttpClientFactory.ReturningJson("{ not json");
