@@ -18,8 +18,16 @@ The `<version>` part must match the `<Version>` property in the corresponding `.
 
 ## Prerequisites
 
-- **`NUGET_API_KEY` repo secret** is set under
-  *Settings → Secrets and variables → Actions*.
+- **NuGet trusted publishing is configured.** Publishing uses OIDC (no
+  long-lived API key). Two pieces must be in place:
+  - A **trusted publishing policy** on nuget.org (*your username → Trusted
+    Publishing*) pointing at this repo: Repository Owner `StuartMeeks`,
+    Repository `NextIteration.SpectreConsole.Auth.Providers`, Workflow File
+    `ci.yml`. The policy owner must own all three provider packages.
+  - A **`NUGET_USER` repo secret** under *Settings → Secrets and variables →
+    Actions*, set to your nuget.org profile name (username, **not** email).
+    The `publish` job passes this to `NuGet/login`, which exchanges the
+    GitHub OIDC token for a short-lived (1-hour) API key at push time.
 - The csproj for the provider you're releasing has its `<Version>` bumped and committed to `main`.
 - `main` is green on CI (otherwise the tag-triggered build will fail too).
 

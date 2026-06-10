@@ -9,6 +9,29 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.3 / 0.2.3 / 0.3.3] — 2026-06-10
+
+_Adobe → 0.2.3, Airtable → 0.2.3, SoftwareOne → 0.3.3. Coordinated maintenance release: dependency refresh plus a move to keyless publishing. No public API or behaviour changes._
+
+### Changed
+- **Dependencies bumped to latest stable.** Runtime dependencies shipped in
+  the provider packages: `Microsoft.Extensions.DependencyInjection.Abstractions`
+  and `Microsoft.Extensions.Http` 10.0.5 → 10.0.9, `Spectre.Console`
+  0.55.2 → 0.56.0. Build/test tooling: `Microsoft.SourceLink.GitHub`
+  8.0.0 → 10.0.300, `Microsoft.NET.Test.Sdk` 17.11.1 → 18.6.0, `xunit`
+  2.9.2 → 2.9.3, `xunit.runner.visualstudio` 2.8.2 → 3.1.5,
+  `coverlet.collector` 6.0.2 → 10.0.1. The capped `NextIteration.SpectreConsole.Auth`
+  range (`[0.6.1,1.0.0)`) is intentionally left unchanged.
+- **Publishing switched to NuGet trusted publishing (OIDC).** The release
+  workflow no longer uses a long-lived `NUGET_API_KEY` secret. The `publish`
+  job requests a GitHub OIDC token (`id-token: write`) and exchanges it via
+  `NuGet/login@v1` for a short-lived (1-hour) nuget.org API key at push time.
+  See [RELEASING.md](RELEASING.md) for the one-time nuget.org policy and
+  `NUGET_USER` secret setup. Packaging is unchanged — consumers see no
+  difference.
+
+---
+
 ## [0.2.2 / 0.2.2 / 0.3.2] — 2026-05-03
 
 _Adobe → 0.2.2, Airtable → 0.2.2, SoftwareOne → 0.3.2. Coordinated patch release across the four sibling repos to fix symbol-package publishing._
