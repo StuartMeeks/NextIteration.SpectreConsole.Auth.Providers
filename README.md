@@ -17,6 +17,7 @@ Each package here ships the concrete types for one third-party service: its `ICr
 | `NextIteration.SpectreConsole.Auth.Providers.SoftwareOne`            | SoftwareOne Marketplace API                   | Ready       |
 | `NextIteration.SpectreConsole.Auth.Providers.Adobe`                  | Adobe VIP Marketplace API (OAuth2 via Adobe IMS) | Ready       |
 | `NextIteration.SpectreConsole.Auth.Providers.Airtable`               | Airtable API (Personal Access Token)          | Ready       |
+| `NextIteration.SpectreConsole.Auth.Providers.GitHub`                 | GitHub API (OAuth device flow)                | Ready       |
 
 Each project has its own README with install instructions, the prompts the collector runs, the fields it stores, and the authentication model (refresh vs. pass-through) — see [`src/`](src).
 
@@ -36,6 +37,7 @@ A provider package plugs into those extensibility points for one specific servic
 using NextIteration.SpectreConsole.Auth;
 using NextIteration.SpectreConsole.Auth.Providers.Adobe;
 using NextIteration.SpectreConsole.Auth.Providers.Airtable;
+using NextIteration.SpectreConsole.Auth.Providers.GitHub;
 using NextIteration.SpectreConsole.Auth.Providers.SoftwareOne;
 
 services.AddCredentialStore(opts =>
@@ -45,14 +47,15 @@ services.AddCredentialStore(opts =>
         ".my-cli", "credentials");
 });
 
-// Adobe's auth service hits Adobe IMS, so it needs IHttpClientFactory.
-// The other two are pass-through and don't require it — but registering
-// it once is harmless.
+// Adobe's auth service hits Adobe IMS, and GitHub runs the OAuth device
+// flow + token refresh, so both need IHttpClientFactory. The others are
+// pass-through and don't require it — but registering it once is harmless.
 services.AddHttpClient();
 
 // One line per provider you want to support:
 services.AddAdobeAuthProvider();
 services.AddAirtableAuthProvider();
+services.AddGitHubAuthProvider();
 services.AddSoftwareOneAuthProvider();
 
 // And register the accounts branch against your Spectre.Console configurator:
@@ -96,7 +99,7 @@ The canonical recipe is one of the existing provider projects under [`src/`](src
 
 ## Releasing
 
-Each provider releases independently via a per-package git tag (`adobe-v*`, `airtable-v*`, `softwareone-v*`). CI picks up the tag, builds, tests, and pushes just that package to nuget.org. See [RELEASING.md](RELEASING.md) for the full flow.
+Each provider releases independently via a per-package git tag (`adobe-v*`, `airtable-v*`, `softwareone-v*`, `github-v*`). CI picks up the tag, builds, tests, and pushes just that package to nuget.org. See [RELEASING.md](RELEASING.md) for the full flow.
 
 ---
 

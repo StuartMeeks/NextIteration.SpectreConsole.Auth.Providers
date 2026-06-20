@@ -2,7 +2,9 @@
   <Project Path="src/NextIteration.SpectreConsole.Auth.Providers.Adobe/NextIteration.SpectreConsole.Auth.Providers.Adobe.csproj" />
   <Project Path="src/NextIteration.SpectreConsole.Auth.Providers.Airtable/NextIteration.SpectreConsole.Auth.Providers.Airtable.csproj" />
   <Project Path="src/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.csproj" />
+  <Project Path="src/NextIteration.SpectreConsole.Auth.Providers.GitHub/NextIteration.SpectreConsole.Auth.Providers.GitHub.csproj" />
   <Project Path="tests/NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests/NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests.csproj" />
   <Project Path="tests/NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests/NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests.csproj" />
   <Project Path="tests/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests/NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests.csproj" />
+  <Project Path="tests/NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests/NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests.csproj" />
 </Solution>

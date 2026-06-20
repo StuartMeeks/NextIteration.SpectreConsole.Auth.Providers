@@ -9,6 +9,31 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## GitHub — [0.1.0] — 2026-06-20
+
+_Initial release of `NextIteration.SpectreConsole.Auth.Providers.GitHub`._
+
+### Added
+- **GitHub provider with OAuth device flow.** Ships `GitHubCredential`,
+  `GitHubToken`, `GitHubAuthenticationService`, the `accounts add` collector,
+  and the `accounts list` summary provider. The collector runs the OAuth device
+  flow — the same flow `gh auth login` uses by default — prompting for the GitHub
+  host, the OAuth App client id, and the requested scopes, then polling the token
+  endpoint (honouring the server `interval`, `slow_down` back-off, and
+  `authorization_pending`) until the user authorises in the browser. Once a token
+  is obtained it is validated and enriched via `GET /user`.
+- **Configurable host.** Defaults to `github.com`; entering a GitHub Enterprise
+  Server host derives the matching web (`https://{host}/`) and REST API
+  (`https://{host}/api/v3/`) base URLs.
+- **Token refresh.** For OAuth Apps that issue expiring user tokens, an expired
+  access token is refreshed via `grant_type=refresh_token` before use (a 30-second
+  clock-skew buffer guards the expiry check). Classic non-expiring tokens are
+  passed straight through. Note: a refreshed token is not yet persisted back to
+  the keystore — see the package README.
+- Multi-targets `net8.0` and `net10.0`, in line with the other providers.
+
+---
+
 ## [0.3.0 / 0.3.0 / 0.4.0] — 2026-06-20
 
 _Adobe → 0.3.0, Airtable → 0.3.0, SoftwareOne → 0.4.0. Coordinated minor release: multi-targeting adds a new `net8.0` target framework. No public API or behaviour changes._

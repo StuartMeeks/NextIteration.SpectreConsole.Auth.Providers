@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<!--
+			CA1707 (no underscores in member names) is the xUnit-naming
+			convention everyone uses for readable test names like
+			Method_WhenCondition_ExpectedResult. Let tests use it.
+
+			CA1515 (internal > public) would flag every xUnit fixture —
+			tests need to be public for the runner to discover them.
+
+			CA2007 (ConfigureAwait) doesn't apply in test contexts; there
+			is no SynchronizationContext to recapture.
+		-->
+		<NoWarn>$(NoWarn);CA1707;CA1515;CA2007</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Versions live in /Directory.Packages.props (CPM). -->
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="coverlet.collector">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\NextIteration.SpectreConsole.Auth.Providers.GitHub\NextIteration.SpectreConsole.Auth.Providers.GitHub.csproj" />
+	</ItemGroup>
+
+</Project>

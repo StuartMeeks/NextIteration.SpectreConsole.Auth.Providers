@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<AnalysisLevel>latest</AnalysisLevel>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PackageId>NextIteration.SpectreConsole.Auth.Providers.GitHub</PackageId>
+		<Version>0.1.0</Version>
+		<Description>GitHub credential provider for NextIteration.SpectreConsole.Auth. Ships GitHubCredential, GitHubToken, GitHubAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt. The collector runs the OAuth device flow (the same flow gh auth login uses), then validates and enriches the credential with the authenticated user's identity.</Description>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>spectre;cli;authentication;credentials;github;oauth;device-flow</PackageTags>
+		<PackageIcon>icon.png</PackageIcon>
+		<Copyright>© Stuart Meeks</Copyright>
+		<EnablePackageValidation>true</EnablePackageValidation>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<DebugType>portable</DebugType>
+		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Versions live in /Directory.Packages.props (CPM). -->
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Http" />
+		<PackageReference Include="Spectre.Console" />
+		<PackageReference Include="NextIteration.SpectreConsole.Auth" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="icon.png" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+</Project>
