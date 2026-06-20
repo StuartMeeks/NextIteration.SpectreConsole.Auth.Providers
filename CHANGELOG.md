@@ -9,9 +9,9 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.4 / 0.2.4 / 0.3.4] — 2026-06-20
+## [0.3.0 / 0.3.0 / 0.4.0] — 2026-06-20
 
-_Adobe → 0.2.4, Airtable → 0.2.4, SoftwareOne → 0.3.4. Coordinated maintenance release: multi-targeting. No public API or behaviour changes._
+_Adobe → 0.3.0, Airtable → 0.3.0, SoftwareOne → 0.4.0. Coordinated minor release: multi-targeting adds a new `net8.0` target framework. No public API or behaviour changes._
 
 ### Changed
 - **Multi-target `net8.0` and `net10.0`.** All three provider packages now
@@ -184,7 +184,7 @@ _SoftwareOne Marketplace API token — pass-through._
 - Per-package NuGet metadata: MIT license expression, SourceLink, deterministic builds, embedded symbols, snupkg, capped version ranges for cross-package dependencies.
 - GitHub Actions CI with per-package tag-triggered publishing (`adobe-v*` → publishes Adobe only, etc.).
 
-[0.2.4 / 0.2.4 / 0.3.4]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
+[0.3.0 / 0.3.0 / 0.4.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.3 / 0.2.3 / 0.3.3]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.2 / 0.2.2 / 0.3.2]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.1 / 0.2.1 / 0.3.1]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
