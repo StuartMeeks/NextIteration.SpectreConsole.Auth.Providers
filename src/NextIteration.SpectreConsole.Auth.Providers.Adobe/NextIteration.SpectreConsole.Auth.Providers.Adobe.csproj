@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -11,7 +11,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.Adobe</PackageId>
-		<Version>0.2.3</Version>
+		<Version>0.2.4</Version>
 		<Description>Adobe VIP Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships AdobeCredential, AdobeToken, AdobeAuthenticationService (OAuth2 client-credentials against Adobe IMS), and the Spectre.Console collector that drives the accounts-add prompt.</Description>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>

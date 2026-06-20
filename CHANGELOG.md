@@ -9,6 +9,29 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.4 / 0.2.4 / 0.3.4] — 2026-06-20
+
+_Adobe → 0.2.4, Airtable → 0.2.4, SoftwareOne → 0.3.4. Coordinated maintenance release: multi-targeting. No public API or behaviour changes._
+
+### Changed
+- **Multi-target `net8.0` and `net10.0`.** All three provider packages now
+  ship `lib/net8.0/` and `lib/net10.0/` assets (previously net10.0 only),
+  matching the core `NextIteration.SpectreConsole.Auth` 0.7.0 and
+  `Spectre.Console` 0.56.0 surfaces. Consumers on an `net8.0` target framework
+  can now reference the providers without being forced onto net10.0. The shared
+  source compiles unchanged against both targets; there are no API or behaviour
+  differences between the two assemblies.
+- **Core library floor raised to `[0.7.0,1.0.0)`.** `NextIteration.SpectreConsole.Auth`
+  first publishes a `net8.0` asset in 0.7.0, so an `net8.0` build of the
+  providers requires at least that version. The upper cap on the next major is
+  unchanged.
+
+### Migration notes
+- Consumer apps need no source changes. Existing net10.0 consumers resolve the
+  `net10.0` asset exactly as before.
+
+---
+
 ## [0.2.3 / 0.2.3 / 0.3.3] — 2026-06-10
 
 _Adobe → 0.2.3, Airtable → 0.2.3, SoftwareOne → 0.3.3. Coordinated maintenance release: dependency refresh plus a move to keyless publishing. No public API or behaviour changes._
