@@ -23,7 +23,7 @@
 			ICredentialSummaryProvider contracts could break. Bump the upper
 			bound deliberately after validating against the next major.
 		-->
-		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.6.1,1.0.0)" />
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.7.0,1.0.0)" />
 	</ItemGroup>
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). -->

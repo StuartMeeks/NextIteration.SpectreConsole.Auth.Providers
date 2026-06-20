@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -11,7 +11,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.SoftwareOne</PackageId>
-		<Version>0.3.3</Version>
+		<Version>0.3.4</Version>
 		<Description>SoftwareOne Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships SoftwareOneCredential, SoftwareOneToken, SoftwareOneAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt. The collector performs a live lookup against the Marketplace API at add-time to validate the token and enrich the credential with the account and token metadata.</Description>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
