@@ -184,7 +184,11 @@ _SoftwareOne Marketplace API token — pass-through._
 - Per-package NuGet metadata: MIT license expression, SourceLink, deterministic builds, embedded symbols, snupkg, capped version ranges for cross-package dependencies.
 - GitHub Actions CI with per-package tag-triggered publishing (`adobe-v*` → publishes Adobe only, etc.).
 
+[0.2.4 / 0.2.4 / 0.3.4]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
+[0.2.3 / 0.2.3 / 0.3.3]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
+[0.2.2 / 0.2.2 / 0.3.2]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.1 / 0.2.1 / 0.3.1]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
+[0.3.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.1.1]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.1.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
