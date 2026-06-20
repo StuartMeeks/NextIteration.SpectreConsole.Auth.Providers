@@ -13,6 +13,7 @@ The three provider packages in this repository version **independently**. Each r
 | Adobe        | `adobe-v`        | `adobe-v0.1.1`  | `NextIteration.SpectreConsole.Auth.Providers.Adobe`         |
 | Airtable     | `airtable-v`     | `airtable-v0.2.0` | `NextIteration.SpectreConsole.Auth.Providers.Airtable`    |
 | SoftwareOne  | `softwareone-v`  | `softwareone-v0.1.5` | `NextIteration.SpectreConsole.Auth.Providers.SoftwareOne` |
+| GitHub       | `github-v`       | `github-v0.1.0`  | `NextIteration.SpectreConsole.Auth.Providers.GitHub`       |
 
 The `<version>` part must match the `<Version>` property in the corresponding `.csproj`. CI does not check this; mismatching them will push whatever version the csproj says.
 
