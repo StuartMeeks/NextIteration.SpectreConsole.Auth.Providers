@@ -12,18 +12,50 @@
 		<CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
 	</PropertyGroup>
 
-	<!-- Runtime dependencies (shipped in provider packages). -->
+	<!--
+		Runtime-aligned Microsoft platform deps: per-TFM floors.
+
+		A PackageReference version in a library is a *minimum* that NuGet
+		forces on every downstream consumer (lowest-applicable-version
+		resolution). Flooring these runtime-aligned packages at a single
+		high major (10.0.x) would drag net8 LTS consumers off their own
+		runtime-aligned servicing line onto the net10 one. So each target
+		framework floors at the latest servicing version of its *own* major:
+		net8 → 8.0.x, net10 → 10.0.x. CPM re-evaluates these conditional
+		groups per-TFM during the inner build, so each provider assembly
+		picks up the floor matching the framework it is compiled for. These
+		match the per-TFM floors the core NextIteration.SpectreConsole.Auth
+		package declares from 0.7.1 onward (see the capped range below).
+	-->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
+	</ItemGroup>
+
+	<!--
+		Runtime dependencies that are NOT runtime-aligned: a single common
+		floor at the version actually built and tested against. Spectre.Console
+		is pre-1.0 (breaking changes land between minors, so a low floor would
+		be both meaningless and risky); the core library is a capped range.
+	-->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
-		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
-		<PackageVersion Include="Spectre.Console" Version="0.56.0" />
+		<PackageVersion Include="Spectre.Console" Version="0.57.2" />
 		<!--
 			Capped range: accept any patch/minor in the 0.x line, but
 			prevent silent upgrade to 1.0.0 where the ICredentialCollector /
 			ICredentialSummaryProvider contracts could break. Bump the upper
 			bound deliberately after validating against the next major.
+			Floored at 0.7.1: that is the first core release to declare
+			per-TFM Microsoft platform floors (its net8 group floors at
+			8.0.x, matching the provider floors above). Against 0.7.0 — whose
+			net8 group still floors at 10.0.9 — the per-TFM floors above would
+			resolve to a package downgrade.
 		-->
-		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.7.0,1.0.0)" />
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.7.1,1.0.0)" />
 	</ItemGroup>
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). -->
@@ -33,7 +65,7 @@
 
 	<!-- Test-only dependencies. -->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
 		<PackageVersion Include="xunit" Version="2.9.3" />
 		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

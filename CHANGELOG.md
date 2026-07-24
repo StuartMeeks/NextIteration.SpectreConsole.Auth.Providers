@@ -9,6 +9,40 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0 / 0.4.0 / 0.5.0 / 0.2.0] — 2026-07-24
+
+_Adobe → 0.4.0, Airtable → 0.4.0, SoftwareOne → 0.5.0, GitHub → 0.2.0. Coordinated minor release: per-target-framework dependency floors for the runtime-aligned Microsoft platform packages. No public API or behaviour changes._
+
+### Changed
+- **Per-target-framework floors for the runtime-aligned Microsoft deps.**
+  `Microsoft.Extensions.DependencyInjection.Abstractions` and
+  `Microsoft.Extensions.Http` are now floored per target framework instead of
+  at a single high major: the `net8.0` dependency group floors at `8.0.x`
+  (`8.0.2` / `8.0.1`) and `net10.0` at `10.0.x` (`10.0.10`). In a library a
+  `PackageReference` version is a *minimum* NuGet forces on every downstream
+  consumer, so a single `10.0.x` floor dragged `net8.0` (LTS) consumers off
+  their own runtime-aligned servicing line; each target now floors at the
+  latest servicing release of its own major.
+- **Core library floor raised to `[0.7.1,1.0.0)`.**
+  `NextIteration.SpectreConsole.Auth` 0.7.1 is the first core release to
+  declare the same per-target-framework floors (its `net8.0` group floors at
+  `8.0.x`). Against 0.7.0 — whose `net8.0` group still floored at `10.0.9` —
+  the provider `net8.0` floors above would resolve to a package downgrade. The
+  upper cap on the next major is unchanged.
+- **`Spectre.Console` floor raised `0.56.0` → `0.57.2`.** This tracks the
+  version the core 0.7.1 surface builds against. It stays a single common
+  floor (not split per target): as a pre-1.0 package it can make breaking
+  changes between minors, so flooring it low would be both meaningless and
+  risky.
+
+### Migration notes
+- Consumer apps need no source changes. `net10.0` consumers resolve equivalent
+  or newer floors than before. `net8.0` consumers are now floored at the
+  aligned `8.0.x` Microsoft platform packages instead of `10.0.9`, keeping them
+  on their own runtime servicing line.
+
+---
+
 ## GitHub — [0.1.0] — 2026-06-20
 
 _Initial release of `NextIteration.SpectreConsole.Auth.Providers.GitHub`._
@@ -209,6 +243,7 @@ _SoftwareOne Marketplace API token — pass-through._
 - Per-package NuGet metadata: MIT license expression, SourceLink, deterministic builds, embedded symbols, snupkg, capped version ranges for cross-package dependencies.
 - GitHub Actions CI with per-package tag-triggered publishing (`adobe-v*` → publishes Adobe only, etc.).
 
+[0.4.0 / 0.4.0 / 0.5.0 / 0.2.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.3.0 / 0.3.0 / 0.4.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.3 / 0.2.3 / 0.3.3]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.2 / 0.2.2 / 0.3.2]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
