@@ -74,9 +74,9 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
 
         var fields = provider.GetDisplayFields("{ not json");
 
-        Assert.Single(fields);
-        Assert.Equal("Status", fields[0].Key);
-        Assert.Equal("<unreadable credential>", fields[0].Value);
+        var field = Assert.Single(fields);
+        Assert.Equal("Status", field.Key);
+        Assert.Equal("<unreadable credential>", field.Value);
     }
 
     [Fact]
@@ -88,9 +88,9 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
 
         var fields = provider.GetDisplayFields("null");
 
-        Assert.Single(fields);
-        Assert.Equal("Status", fields[0].Key);
-        Assert.Equal("<unreadable credential>", fields[0].Value);
+        var field = Assert.Single(fields);
+        Assert.Equal("Status", field.Key);
+        Assert.Equal("<unreadable credential>", field.Value);
     }
 
     [Fact]
@@ -111,8 +111,8 @@ public sealed class SoftwareOneCredentialSummaryProviderTests
 
         var fields = provider.GetDisplayFields(pre030);
 
-        Assert.Single(fields);
-        Assert.Equal("Status", fields[0].Key);
-        Assert.Equal("<unreadable credential>", fields[0].Value);
+        var field = Assert.Single(fields);
+        Assert.Equal("Status", field.Key);
+        Assert.Equal("<unreadable credential>", field.Value);
     }
 }

@@ -34,8 +34,8 @@ public sealed class ServiceCollectionExtensionsTests
         // so the core package's AddCredentialCommand can resolve them all via
         // IEnumerable<ICredentialCollector>.
         var collectors = sp.GetServices<ICredentialCollector>().ToList();
-        Assert.Single(collectors);
-        Assert.IsType<SoftwareOneCredentialCollector>(collectors[0]);
+        var collector = Assert.Single(collectors);
+        Assert.IsType<SoftwareOneCredentialCollector>(collector);
     }
 
     [Fact]
@@ -48,8 +48,8 @@ public sealed class ServiceCollectionExtensionsTests
 
         using var sp = services.BuildServiceProvider();
         var summaries = sp.GetServices<ICredentialSummaryProvider>().ToList();
-        Assert.Single(summaries);
-        Assert.IsType<SoftwareOneCredentialSummaryProvider>(summaries[0]);
+        var summary = Assert.Single(summaries);
+        Assert.IsType<SoftwareOneCredentialSummaryProvider>(summary);
     }
 
     [Fact]

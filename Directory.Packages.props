@@ -58,18 +58,20 @@
 		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.7.1,1.0.0)" />
 	</ItemGroup>
 
-	<!-- Build / source-link tooling (PrivateAssets in csprojs). -->
+	<!-- Build / source-link tooling (PrivateAssets in csprojs). STANDARD.md 1.7. -->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
 	</ItemGroup>
 
-	<!-- Test-only dependencies. -->
+	<!--
+		Test-only. STANDARD.md 2.1/2.5/2.6 — xunit.v3 on Microsoft.Testing.Platform.
+		Do NOT add Microsoft.NET.Test.Sdk, xunit.runner.visualstudio or
+		coverlet.collector: all three are VSTest-only and MTP replaces the runner.
+	-->
 	<ItemGroup>
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-		<PackageVersion Include="xunit" Version="2.9.3" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-		<PackageVersion Include="coverlet.collector" Version="10.0.1" />
+		<PackageVersion Include="xunit.v3" Version="4.0.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.10.0" />
 	</ItemGroup>
 
 </Project>

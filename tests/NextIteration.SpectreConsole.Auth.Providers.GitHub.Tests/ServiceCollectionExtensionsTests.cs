@@ -31,8 +31,8 @@ public sealed class ServiceCollectionExtensionsTests
 
         using var sp = services.BuildServiceProvider();
         var collectors = sp.GetServices<ICredentialCollector>().ToList();
-        Assert.Single(collectors);
-        Assert.IsType<GitHubCredentialCollector>(collectors[0]);
+        var collector = Assert.Single(collectors);
+        Assert.IsType<GitHubCredentialCollector>(collector);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public sealed class ServiceCollectionExtensionsTests
 
         using var sp = services.BuildServiceProvider();
         var summaries = sp.GetServices<ICredentialSummaryProvider>().ToList();
-        Assert.Single(summaries);
-        Assert.IsType<GitHubCredentialSummaryProvider>(summaries[0]);
+        var summary = Assert.Single(summaries);
+        Assert.IsType<GitHubCredentialSummaryProvider>(summary);
     }
 
     [Fact]
