@@ -1,11 +1,24 @@
 # Changelog
 
-All notable changes to the three provider packages are documented in this file.
+All notable changes to the four provider packages are documented in this file.
 
-Each provider versions **independently** via per-package tag prefixes (`adobe-v*`, `airtable-v*`, `softwareone-v*`) — see [RELEASING.md](RELEASING.md) for mechanics. To date, all three have shipped in lockstep with identical version numbers; future releases may diverge, and sections below will call out per-package differences when that happens.
+Each provider versions **independently** via per-package tag prefixes (`adobe-v*`, `airtable-v*`, `softwareone-v*`, `github-v*`) — see [RELEASING.md](RELEASING.md) for mechanics. Releases may ship coordinated or per-package; sections below call out per-package differences when they diverge.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+
+### Changed
+- **Test stack migrated from xUnit.net v2 (VSTest) to xUnit.net v3 on Microsoft.Testing.Platform.**
+  `xunit` 2.9.3 is deprecated and terminal; the suite now uses `xunit.v3` 4.0.0.
+  `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` and `coverlet.collector`
+  are removed — all three are VSTest-only, and the .NET 10 SDK no longer runs MTP
+  test projects through the legacy VSTest target. A root `global.json` opts
+  `dotnet test` into the MTP runner. Test-only change; no package, public API, or
+  behaviour change for consumers.
 
 ---
 

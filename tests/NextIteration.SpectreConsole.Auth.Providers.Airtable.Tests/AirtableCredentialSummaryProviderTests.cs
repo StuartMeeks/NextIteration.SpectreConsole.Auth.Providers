@@ -26,10 +26,10 @@ public sealed class AirtableCredentialSummaryProviderTests
 
         var fields = provider.GetDisplayFields(json);
 
-        Assert.Single(fields);
-        Assert.Equal("Token", fields[0].Key);
+        var field = Assert.Single(fields);
+        Assert.Equal("Token", field.Key);
         // Long token: first four + ellipsis + last four.
-        Assert.Equal("abcd...xyz9", fields[0].Value);
+        Assert.Equal("abcd...xyz9", field.Value);
     }
 
     [Fact]
@@ -68,9 +68,9 @@ public sealed class AirtableCredentialSummaryProviderTests
 
         var fields = provider.GetDisplayFields("{ not json");
 
-        Assert.Single(fields);
-        Assert.Equal("Status", fields[0].Key);
-        Assert.Equal("<unreadable credential>", fields[0].Value);
+        var field = Assert.Single(fields);
+        Assert.Equal("Status", field.Key);
+        Assert.Equal("<unreadable credential>", field.Value);
     }
 
     [Fact]
@@ -80,8 +80,8 @@ public sealed class AirtableCredentialSummaryProviderTests
 
         var fields = provider.GetDisplayFields("null");
 
-        Assert.Single(fields);
-        Assert.Equal("Status", fields[0].Key);
-        Assert.Equal("<unreadable credential>", fields[0].Value);
+        var field = Assert.Single(fields);
+        Assert.Equal("Status", field.Key);
+        Assert.Equal("<unreadable credential>", field.Value);
     }
 }
