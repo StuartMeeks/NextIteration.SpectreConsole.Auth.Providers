@@ -2,11 +2,6 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<AnalysisLevel>latest</AnalysisLevel>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -14,21 +9,12 @@
 		<Version>0.5.0</Version>
 		<Description>SoftwareOne Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships SoftwareOneCredential, SoftwareOneToken, SoftwareOneAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt. The collector performs a live lookup against the Marketplace API at add-time to validate the token and enrich the credential with the account and token metadata.</Description>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>spectre;cli;authentication;credentials;softwareone;marketplace</PackageTags>
 		<PackageIcon>icon.png</PackageIcon>
-		<Copyright>© Stuart Meeks</Copyright>
-		<EnablePackageValidation>true</EnablePackageValidation>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<IncludeSymbols>true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<DebugType>portable</DebugType>
-		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
