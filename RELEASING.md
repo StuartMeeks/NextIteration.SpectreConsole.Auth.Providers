@@ -1,6 +1,6 @@
 # Releasing
 
-The three provider packages in this repository version **independently**. Each release is triggered by pushing a per-package git tag. CI builds, tests, and publishes just that one package to nuget.org.
+The four provider packages in this repository version **independently**. Each release is triggered by pushing a per-package git tag. CI builds, tests, and publishes just that one package to nuget.org.
 
 ## Tag format
 
@@ -24,7 +24,7 @@ The `<version>` part must match the `<Version>` property in the corresponding `.
   - A **trusted publishing policy** on nuget.org (*your username → Trusted
     Publishing*) pointing at this repo: Repository Owner `StuartMeeks`,
     Repository `NextIteration.SpectreConsole.Auth.Providers`, Workflow File
-    `ci.yml`. The policy owner must own all three provider packages.
+    `ci.yml`. The policy owner must own all four provider packages.
   - A **`NUGET_USER` repo secret** under *Settings → Secrets and variables →
     Actions*, set to your nuget.org profile name (username, **not** email).
     The `publish` job passes this to `NuGet/login`, which exchanges the
@@ -42,7 +42,8 @@ The `<version>` part must match the `<Version>` property in the corresponding `.
 
    Commit and push.
 
-2. **Wait for CI to go green** on that commit (build + test, ~30 seconds).
+2. **Wait for CI to go green** on that commit. CI runs `build`, the `test` matrix
+   (Linux, Windows, macOS × net8.0 and net10.0), and the `ci` gate — a few minutes.
 
 3. **Create and push the tag**:
 
@@ -53,10 +54,16 @@ The `<version>` part must match the `<Version>` property in the corresponding `.
    ```
 
 4. **Watch the release workflow**. The tag push triggers a new CI run:
-   - `build` job runs (re-builds and tests everything)
-   - `publish` job runs (downloads the nupkg, pushes **only the Adobe package** to nuget.org)
+   - `build` packs **all four** packages into one artifact, and the `test` matrix and
+     `ci` gate run as on any push.
+   - `publish` (gated on `ci`) downloads that artifact, **deletes every package except
+     the one whose name matches the tag prefix**, then runs the canonical
+     `dotnet nuget push "*.nupkg" --skip-duplicate` — so a `adobe-v*` tag ships **only
+     the Adobe package**. This one-package narrowing is a documented deviation from the
+     canonical CI (`NextIteration.Standards` EXCEPTIONS.md §3.0.1).
 
-   Visit *Actions* on GitHub to watch. Typically ~45 seconds end-to-end.
+   Visit *Actions* on GitHub to watch. A tag build runs the full matrix, so budget a few
+   minutes end-to-end.
 
 5. **Verify on nuget.org**:
    ```
