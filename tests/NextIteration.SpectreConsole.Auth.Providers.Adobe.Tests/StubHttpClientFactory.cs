@@ -1,54 +1,55 @@
 using System.Net;
 
-namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests;
-
-/// <summary>
-/// Minimal <see cref="IHttpClientFactory"/> + <see cref="HttpMessageHandler"/>
-/// doubles that capture the outgoing request and return a canned response.
-/// Used by the authentication-service tests to exercise the IMS call without
-/// hitting the network.
-/// </summary>
-internal sealed class StubHttpClientFactory : IHttpClientFactory
+namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
 {
-    private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
-
-    public HttpRequestMessage? LastRequest { get; private set; }
-    public string? LastRequestBody { get; private set; }
-
-    public StubHttpClientFactory(Func<HttpRequestMessage, HttpResponseMessage> responder)
+    /// <summary>
+    /// Minimal <see cref="IHttpClientFactory"/> + <see cref="HttpMessageHandler"/>
+    /// doubles that capture the outgoing request and return a canned response.
+    /// Used by the authentication-service tests to exercise the IMS call without
+    /// hitting the network.
+    /// </summary>
+    internal sealed class StubHttpClientFactory : IHttpClientFactory
     {
-        _responder = responder;
-    }
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
 
-    public HttpClient CreateClient(string name)
-    {
-        return new HttpClient(new CapturingHandler(this));
-    }
+        public HttpRequestMessage? LastRequest { get; private set; }
+        public string? LastRequestBody { get; private set; }
 
-    // Convenience factory for the common case: a 200 OK with the given JSON body.
-    public static StubHttpClientFactory ReturningJson(string json, HttpStatusCode status = HttpStatusCode.OK)
-    {
-        return new StubHttpClientFactory(_ => new HttpResponseMessage(status)
+        public StubHttpClientFactory(Func<HttpRequestMessage, HttpResponseMessage> responder)
         {
-            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json"),
-        });
-    }
+            _responder = responder;
+        }
 
-    private sealed class CapturingHandler : HttpMessageHandler
-    {
-        private readonly StubHttpClientFactory _owner;
+        public HttpClient CreateClient(string name) => new(new CapturingHandler(this));
 
-        public CapturingHandler(StubHttpClientFactory owner) => _owner = owner;
-
-        protected override async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request, CancellationToken cancellationToken)
+        // Convenience factory for the common case: a 200 OK with the given JSON body.
+        public static StubHttpClientFactory ReturningJson(string json, HttpStatusCode status = HttpStatusCode.OK)
         {
-            _owner.LastRequest = request;
-            if (request.Content is not null)
+            return new StubHttpClientFactory(_ => new HttpResponseMessage(status)
             {
-                _owner.LastRequestBody = await request.Content.ReadAsStringAsync(cancellationToken);
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+
+        private sealed class CapturingHandler : HttpMessageHandler
+        {
+            private readonly StubHttpClientFactory _owner;
+
+            public CapturingHandler(StubHttpClientFactory owner)
+            {
+                _owner = owner;
             }
-            return _owner._responder(request);
+
+            protected override async Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                _owner.LastRequest = request;
+                if (request.Content is not null)
+                {
+                    _owner.LastRequestBody = await request.Content.ReadAsStringAsync(cancellationToken);
+                }
+                return _owner._responder(request);
+            }
         }
     }
 }

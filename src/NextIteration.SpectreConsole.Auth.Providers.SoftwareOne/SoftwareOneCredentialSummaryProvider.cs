@@ -1,4 +1,5 @@
 using NextIteration.SpectreConsole.Auth.Commands;
+
 using System.Text.Json;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
@@ -51,7 +52,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         // four-star mask so the display never leaks length information.
         private static string Mask(string value)
         {
-            if (string.IsNullOrEmpty(value)) return string.Empty;
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
             return value.Length <= 10 ? "****" : value[..4] + "..." + value[^4..];
         }
     }

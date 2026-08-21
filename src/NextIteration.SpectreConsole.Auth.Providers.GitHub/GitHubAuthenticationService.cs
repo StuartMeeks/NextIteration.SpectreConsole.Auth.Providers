@@ -1,5 +1,6 @@
 using NextIteration.SpectreConsole.Auth.Persistence;
 using NextIteration.SpectreConsole.Auth.Services;
+
 using System.Net.Http.Headers;
 using System.Text.Json;
 

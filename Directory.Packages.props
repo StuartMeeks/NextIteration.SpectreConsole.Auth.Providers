@@ -45,17 +45,20 @@
 	<ItemGroup>
 		<PackageVersion Include="Spectre.Console" Version="0.57.2" />
 		<!--
-			Capped range: accept any patch/minor in the 0.x line, but
-			prevent silent upgrade to 1.0.0 where the ICredentialCollector /
-			ICredentialSummaryProvider contracts could break. Bump the upper
-			bound deliberately after validating against the next major.
-			Floored at 0.7.1: that is the first core release to declare
-			per-TFM Microsoft platform floors (its net8 group floors at
-			8.0.x, matching the provider floors above). Against 0.7.0 — whose
-			net8 group still floors at 10.0.9 — the per-TFM floors above would
-			resolve to a package downgrade.
+			Capped range: accept any patch/minor in the 1.x line, but
+			prevent a silent upgrade to 2.0.0 where the ICredentialCollector /
+			ICredentialSummaryProvider / ICredentialManager contracts could
+			break. Bump the upper bound deliberately after validating against
+			the next major.
+			Floored at 1.0.0: validated against the core 1.0.0 surface, which
+			adds the ExportCredentialsAsync / RestoreCredentialAsync members to
+			ICredentialManager (the accounts export/import feature). The
+			collector and summary-provider contracts the providers implement are
+			unchanged from 0.7.1; the floor moves to 1.0.0 because the test
+			doubles implement the expanded ICredentialManager. 1.0.0 also keeps
+			the per-TFM Microsoft platform floors introduced in 0.7.1.
 		-->
-		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[0.7.1,1.0.0)" />
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[1.0.0,2.0.0)" />
 	</ItemGroup>
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). STANDARD.md 1.7. -->

@@ -18,7 +18,7 @@ Drops a ready-to-use `SoftwareOneCredential`, `SoftwareOneToken`, authentication
 dotnet add package NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 ```
 
-Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 0.4.1) — NuGet pulls it in transitively.
+Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 1.0.0) — NuGet pulls it in transitively.
 
 ---
 

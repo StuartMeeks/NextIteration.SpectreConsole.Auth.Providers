@@ -1,4 +1,5 @@
 using NextIteration.SpectreConsole.Auth.Credentials;
+
 using System.Text.Json;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.Adobe

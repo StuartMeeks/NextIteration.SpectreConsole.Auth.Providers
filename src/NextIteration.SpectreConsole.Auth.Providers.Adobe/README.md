@@ -18,7 +18,7 @@ Drops a ready-to-use `AdobeCredential`, `AdobeToken`, authentication service (OA
 dotnet add package NextIteration.SpectreConsole.Auth.Providers.Adobe
 ```
 
-Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 0.4.1) — NuGet pulls it in transitively.
+Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 1.0.0) — NuGet pulls it in transitively.
 
 ---
 

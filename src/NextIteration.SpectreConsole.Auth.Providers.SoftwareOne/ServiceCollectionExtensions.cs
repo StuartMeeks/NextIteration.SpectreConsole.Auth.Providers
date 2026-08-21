@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+
 using NextIteration.SpectreConsole.Auth.Commands;
 using NextIteration.SpectreConsole.Auth.Services;
 
