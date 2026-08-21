@@ -1,5 +1,7 @@
 using Spectre.Console;
+
 using NextIteration.SpectreConsole.Auth.Commands;
+
 using System.Text.Json;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
