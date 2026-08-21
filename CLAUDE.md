@@ -9,7 +9,7 @@ client-credentials against Adobe IMS), **Airtable** (personal-access tokens),
 Each ships an `ICredentialCollector` that drives the `accounts add` prompt and an
 `ICredentialSummaryProvider` that renders `accounts list`, plus a `ServiceCollectionExtensions`
 registration method. They collect credentials; the core Auth package owns encryption
-and on-disk storage. They consume it through a capped range (`[0.7.1,1.0.0)`).
+and on-disk storage. They consume it through a capped range (`[1.0.0,2.0.0)`).
 
 ## Things that are easy to get wrong here
 
@@ -20,11 +20,14 @@ and on-disk storage. They consume it through a capped range (`[0.7.1,1.0.0)`).
   exactly its own package. That extra step is a documented deviation from the canonical
   workflow (`NextIteration.Standards` EXCEPTIONS.md §3.0.1 and §3.2) — keep it, and keep
   the rest of the job identical to the template.
-- **The core dependency is a capped range, `[0.7.1,1.0.0)`.** The cap stops a `1.0.0`
-  silently changing the `ICredentialCollector` / `ICredentialSummaryProvider` contracts
-  underneath the providers. Floored at 0.7.1 (the first core release with per-TFM floors);
-  against 0.7.0 the provider floors resolve to a downgrade. Bump the upper bound only after
-  validating against the next core major.
+- **The core dependency is a capped range, `[1.0.0,2.0.0)`.** The cap stops a `2.0.0`
+  silently changing the `ICredentialCollector` / `ICredentialSummaryProvider` /
+  `ICredentialManager` contracts underneath the providers. Floored at 1.0.0 — validated
+  against the core 1.0.0 surface, which adds `ExportCredentialsAsync` /
+  `RestoreCredentialAsync` to `ICredentialManager` (the accounts export/import feature);
+  the four test `FakeCredentialManager` doubles implement those members. The
+  collector/summary-provider contracts the providers implement are unchanged from 0.7.1.
+  Bump the upper bound only after validating against the next core major.
 - **Per-TFM floors are deliberate.** `Microsoft.Extensions.DependencyInjection.Abstractions`
   and `Microsoft.Extensions.Http` floor at 8.0.x for `net8.0` and 10.0.x for `net10.0`.
   Raising the net8 floor to a 10.x version drags every net8 LTS consumer off its servicing
@@ -57,10 +60,29 @@ that is an `EXCEPTIONS.md` entry in the standards repo, not a local difference.
   surface is fully documented.
 - **Update `CHANGELOG.md`** under `[Unreleased]`, saying what changed and why.
 
+## Code style
+
+Style is enforced by the canonical `.editorconfig` (see STANDARD.md §5.2) — braces always,
+block-scoped namespaces, `var` throughout, explicit accessibility, and a full naming
+ruleset all fail the build if violated. Two conventions the analyzers cannot enforce, so
+they are enforced here instead:
+
+- **No discard solely to swallow a return value.** Do not write `_ = foo.Bar()` just to
+  ignore a result — write the call plainly (`foo.Bar();`). Discards are allowed only where
+  they are *required for functionality*: `out _`, tuple/positional deconstruction, unused
+  lambda parameters, an intentional fire-and-forget `Task` (`_ = FooAsync();`, which also
+  silences CS4014), and forcing a switch expression evaluated only for its `throw`.
+- **Do not introduce class or struct primary constructors.** Use a classic constructor.
+  (Records' positional syntax is fine — that is core record syntax, not this feature.)
+
+Note: `dotnet format style` corrupts these multi-targeted projects (it merges the per-TFM
+using passes and leaves conflict markers). Use `dotnet format whitespace` — which is
+TFM-independent and safe — and hand-fix the few remaining `style` diagnostics.
+
 ## Dependabot
 
 Minor and patch updates auto-merge behind CI. Major updates stay open for a human — that
-is deliberate, not a backlog to clear. The two per-TFM floored packages have major updates
+is deliberate, not a backlog to clear. Packages with per-TFM floors have major updates
 suppressed entirely via `ignore`; bump those by hand when a new .NET major lands.
 
 ## After opening a pull request
@@ -80,6 +102,7 @@ message. Do not stop silently and wait to be asked.
 
 ## CI
 
-The single required status check is `ci` — an aggregating gate over `build` and `test`.
-Renaming those jobs is safe; the ruleset never names them. Do not make them required
-checks directly.
+The required status checks are `ci` — an aggregating gate over `build` and `test` — and
+`analyze` (CodeQL). Renaming `build`/`test` is safe; the ruleset never names them. Do not
+make them required checks directly. Open CodeQL alerts block merge until resolved or
+dismissed (STANDARD.md §4.12).

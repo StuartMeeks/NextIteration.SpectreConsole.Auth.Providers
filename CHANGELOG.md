@@ -12,6 +12,18 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Core library floor raised to `[1.0.0,2.0.0)`.** `NextIteration.SpectreConsole.Auth`
+  1.0.0 is the first stable core release; the provider packages now floor there and cap
+  before the next major. The bump is a consumer-visible lift of the minimum core
+  dependency. 1.0.0 adds the whole-store `accounts export` / `accounts import` feature,
+  which lives entirely in the core over `ICredentialManager` (new
+  `ExportCredentialsAsync` / `RestoreCredentialAsync` members) — the provider
+  `ICredentialCollector` / `ICredentialSummaryProvider` contracts are unchanged, so a
+  provider consumer needs no source changes beyond referencing core 1.0.0. The four test
+  `FakeCredentialManager` doubles implement the two new interface members (they throw, in
+  line with the existing "fail loudly" doubles; the export/import path is exercised by the
+  core suite, not here). The upper cap moves from `1.0.0`-exclusive to `2.0.0`-exclusive so
+  a breaking core 2.0 does not silently flow into provider consumers.
 - **Test stack migrated from xUnit.net v2 (VSTest) to xUnit.net v3 on Microsoft.Testing.Platform.**
   `xunit` 2.9.3 is deprecated and terminal; the suite now uses `xunit.v3` 4.0.0.
   `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` and `coverlet.collector`
@@ -19,6 +31,16 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test projects through the legacy VSTest target. A root `global.json` opts
   `dotnet test` into the MTP runner. Test-only change; no package, public API, or
   behaviour change for consumers.
+
+### Repository
+- **Re-aligned with the revised `NextIteration.Standards` baseline.** Adopted the canonical
+  allow-list `.editorconfig` (§5.2) and turned on `EnforceCodeStyleInBuild` (§1.2.1), so the
+  house style — braces always, block-scoped namespaces, `var` throughout, explicit
+  accessibility, the naming ruleset, and public-API XML docs (CS1591) — now gates the build
+  under `TreatWarningsAsErrors`. Brought all four packages and their test suites to
+  style-green; the four test projects add `IDE0005` to `NoWarn` (that rule needs a doc file
+  a test project does not generate — the estate-wide §2.7 amendment). No package, public
+  API, or runtime-behaviour change for consumers.
 
 ---
 

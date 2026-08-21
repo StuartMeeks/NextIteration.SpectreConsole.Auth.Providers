@@ -1,5 +1,6 @@
 using NextIteration.SpectreConsole.Auth.Persistence;
 using NextIteration.SpectreConsole.Auth.Services;
+
 using System.Text.Json;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
@@ -21,8 +22,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
     /// </remarks>
     public sealed class AdobeAuthenticationService : IAuthenticationService<AdobeCredential, AdobeToken>
     {
-        // Named HttpClient identity. Consumers wishing to pre-configure the
-        // client (proxy, retry handler, etc.) can call services.AddHttpClient(HttpClientName).
+        /// <summary>
+        /// Named HttpClient identity used by the service. Consumers wishing to
+        /// pre-configure the client (proxy, retry handler, etc.) can call
+        /// <c>services.AddHttpClient(AdobeAuthenticationService.HttpClientName, …)</c>.
+        /// </summary>
         public const string HttpClientName = "Adobe Authenticator";
 
         // Path segment relative to the credential's ImsUrl.
@@ -211,7 +215,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         /// </summary>
         private static string NormalizeTokenType(string tokenType)
         {
-            if (string.IsNullOrEmpty(tokenType)) return tokenType;
+            if (string.IsNullOrEmpty(tokenType))
+            {
+                return tokenType;
+            }
             return char.ToUpperInvariant(tokenType[0]) + tokenType[1..].ToLowerInvariant();
         }
     }

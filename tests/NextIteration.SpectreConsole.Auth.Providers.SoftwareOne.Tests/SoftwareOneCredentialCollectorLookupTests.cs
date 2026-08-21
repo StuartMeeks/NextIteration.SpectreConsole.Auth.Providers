@@ -1,23 +1,24 @@
 using System.Net;
+
 using Xunit;
 
-namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests;
-
-/// <summary>
-/// Tests for <see cref="SoftwareOneCredentialCollector.LookupTokenAsync"/>,
-/// the Marketplace API validation call that's run at the end of
-/// <c>CollectAsync</c>. The interactive prompt flow itself is not unit
-/// tested (would need a Spectre test console harness); this exercise the
-/// HTTP path directly using a stub <see cref="IHttpClientFactory"/>.
-/// </summary>
-public sealed class SoftwareOneCredentialCollectorLookupTests
+namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
 {
-    private static readonly Uri BaseUrl = new("https://api.softwareone.com/");
-
-    [Fact]
-    public async Task LookupTokenAsync_SingleMatch_ReturnsTokenDto()
+    /// <summary>
+    /// Tests for <see cref="SoftwareOneCredentialCollector.LookupTokenAsync"/>,
+    /// the Marketplace API validation call that's run at the end of
+    /// <c>CollectAsync</c>. The interactive prompt flow itself is not unit
+    /// tested (would need a Spectre test console harness); this exercise the
+    /// HTTP path directly using a stub <see cref="IHttpClientFactory"/>.
+    /// </summary>
+    public sealed class SoftwareOneCredentialCollectorLookupTests
     {
-        var http = StubHttpClientFactory.ReturningJson("""
+        private static readonly Uri BaseUrl = new("https://api.softwareone.com/");
+
+        [Fact]
+        public async Task LookupTokenAsync_SingleMatch_ReturnsTokenDto()
+        {
+            var http = StubHttpClientFactory.ReturningJson("""
             {
               "data": [
                 {
@@ -28,69 +29,69 @@ public sealed class SoftwareOneCredentialCollectorLookupTests
               ]
             }
             """);
-        var collector = new SoftwareOneCredentialCollector(http);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        var token = await collector.LookupTokenAsync(BaseUrl, "abc-123");
+            var token = await collector.LookupTokenAsync(BaseUrl, "abc-123");
 
-        Assert.Equal("TOK-001", token.Id);
-        Assert.Equal("prod-deploy", token.Name);
-        Assert.Equal("ACC-777", token.Account.Id);
-        Assert.Equal("Contoso GmbH", token.Account.Name);
-        Assert.Equal("Reseller", token.Account.Type);
-    }
+            Assert.Equal("TOK-001", token.Id);
+            Assert.Equal("prod-deploy", token.Name);
+            Assert.Equal("ACC-777", token.Account.Id);
+            Assert.Equal("Contoso GmbH", token.Account.Name);
+            Assert.Equal("Reseller", token.Account.Type);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_SingleMatch_SendsBearerAuthAndCorrectPath()
-    {
-        var http = StubHttpClientFactory.ReturningJson("""
+        [Fact]
+        public async Task LookupTokenAsync_SingleMatch_SendsBearerAuthAndCorrectPath()
+        {
+            var http = StubHttpClientFactory.ReturningJson("""
             { "data": [ { "id": "T", "name": "n", "account": { "id": "A", "name": "a", "type": "t" } } ] }
             """);
-        var collector = new SoftwareOneCredentialCollector(http);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        _ = await collector.LookupTokenAsync(BaseUrl, "my-token-value");
+            _ = await collector.LookupTokenAsync(BaseUrl, "my-token-value");
 
-        Assert.NotNull(http.LastRequest);
-        Assert.Equal(HttpMethod.Get, http.LastRequest!.Method);
-        Assert.Equal("Bearer", http.LastRequest.Headers.Authorization?.Scheme);
-        Assert.Equal("my-token-value", http.LastRequest.Headers.Authorization?.Parameter);
-        Assert.Contains("/v1/accounts/api-tokens?eq(token,'my-token-value')&limit=2",
-            http.LastRequest.RequestUri?.ToString() ?? string.Empty,
-            StringComparison.Ordinal);
-    }
+            Assert.NotNull(http.LastRequest);
+            Assert.Equal(HttpMethod.Get, http.LastRequest!.Method);
+            Assert.Equal("Bearer", http.LastRequest.Headers.Authorization?.Scheme);
+            Assert.Equal("my-token-value", http.LastRequest.Headers.Authorization?.Parameter);
+            Assert.Contains("/v1/accounts/api-tokens?eq(token,'my-token-value')&limit=2",
+                http.LastRequest.RequestUri?.ToString() ?? string.Empty,
+                StringComparison.Ordinal);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_TokenValueWithSpecialChars_IsUrlEncoded()
-    {
-        var http = StubHttpClientFactory.ReturningJson("""
+        [Fact]
+        public async Task LookupTokenAsync_TokenValueWithSpecialChars_IsUrlEncoded()
+        {
+            var http = StubHttpClientFactory.ReturningJson("""
             { "data": [ { "id": "T", "name": "n", "account": { "id": "A", "name": "a", "type": "t" } } ] }
             """);
-        var collector = new SoftwareOneCredentialCollector(http);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        _ = await collector.LookupTokenAsync(BaseUrl, "token with spaces & slash/");
+            _ = await collector.LookupTokenAsync(BaseUrl, "token with spaces & slash/");
 
-        // URL-encoded: space -> %20, & -> %26, / -> %2F.
-        // Use AbsoluteUri (canonical form) rather than ToString() which
-        // returns a display-friendly form that decodes %20 back to space.
-        var uri = http.LastRequest!.RequestUri!.AbsoluteUri;
-        Assert.Contains("token%20with%20spaces%20%26%20slash%2F", uri, StringComparison.Ordinal);
-    }
+            // URL-encoded: space -> %20, & -> %26, / -> %2F.
+            // Use AbsoluteUri (canonical form) rather than ToString() which
+            // returns a display-friendly form that decodes %20 back to space.
+            var uri = http.LastRequest!.RequestUri!.AbsoluteUri;
+            Assert.Contains("token%20with%20spaces%20%26%20slash%2F", uri, StringComparison.Ordinal);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_ZeroMatches_Throws()
-    {
-        var http = StubHttpClientFactory.ReturningJson("""{ "data": [] }""");
-        var collector = new SoftwareOneCredentialCollector(http);
+        [Fact]
+        public async Task LookupTokenAsync_ZeroMatches_Throws()
+        {
+            var http = StubHttpClientFactory.ReturningJson("""{ "data": [] }""");
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
 
-        Assert.Contains("zero matches", ex.Message, StringComparison.OrdinalIgnoreCase);
-    }
+            Assert.Contains("zero matches", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_MultipleMatches_Throws()
-    {
-        var http = StubHttpClientFactory.ReturningJson("""
+        [Fact]
+        public async Task LookupTokenAsync_MultipleMatches_Throws()
+        {
+            var http = StubHttpClientFactory.ReturningJson("""
             {
               "data": [
                 { "id": "T1", "name": "n1", "account": { "id": "A1", "name": "a1", "type": "t1" } },
@@ -98,146 +99,144 @@ public sealed class SoftwareOneCredentialCollectorLookupTests
               ]
             }
             """);
-        var collector = new SoftwareOneCredentialCollector(http);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
 
-        Assert.Contains("2 matches", ex.Message, StringComparison.Ordinal);
-    }
+            Assert.Contains("2 matches", ex.Message, StringComparison.Ordinal);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_HttpError_Throws_WithBodyInMessage()
-    {
-        var http = StubHttpClientFactory.ReturningJson(
-            """{ "error": "unauthorized" }""",
-            HttpStatusCode.Unauthorized);
-        var collector = new SoftwareOneCredentialCollector(http);
+        [Fact]
+        public async Task LookupTokenAsync_HttpError_Throws_WithBodyInMessage()
+        {
+            var http = StubHttpClientFactory.ReturningJson(
+                """{ "error": "unauthorized" }""",
+                HttpStatusCode.Unauthorized);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
 
-        Assert.Contains("Unauthorized", ex.Message, StringComparison.Ordinal);
-        Assert.Contains("unauthorized", ex.Message, StringComparison.Ordinal);
-    }
+            Assert.Contains("Unauthorized", ex.Message, StringComparison.Ordinal);
+            Assert.Contains("unauthorized", ex.Message, StringComparison.Ordinal);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_HttpError_RedactsTokenFromBody()
-    {
-        // Simulate a misbehaving upstream proxy that echoes the request URL
-        // (which carries the token in the eq(token,'…') query) back into the
-        // error body. The collector must redact the token before it lands in
-        // the exception message — otherwise the credential leaks via logs.
-        const string tokenValue = "tok-secret-12345";
-        var http = StubHttpClientFactory.ReturningJson(
-            $$"""{ "error": "bad gateway", "request_url": "/v1/accounts/api-tokens?eq(token,'{{tokenValue}}')&limit=2" }""",
-            HttpStatusCode.BadGateway);
-        var collector = new SoftwareOneCredentialCollector(http);
+        [Fact]
+        public async Task LookupTokenAsync_HttpError_RedactsTokenFromBody()
+        {
+            // Simulate a misbehaving upstream proxy that echoes the request URL
+            // (which carries the token in the eq(token,'…') query) back into the
+            // error body. The collector must redact the token before it lands in
+            // the exception message — otherwise the credential leaks via logs.
+            const string tokenValue = "tok-secret-12345";
+            var http = StubHttpClientFactory.ReturningJson(
+                $$"""{ "error": "bad gateway", "request_url": "/v1/accounts/api-tokens?eq(token,'{{tokenValue}}')&limit=2" }""",
+                HttpStatusCode.BadGateway);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => collector.LookupTokenAsync(BaseUrl, tokenValue));
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, tokenValue));
 
-        Assert.DoesNotContain(tokenValue, ex.Message, StringComparison.Ordinal);
-        Assert.Contains("<redacted>", ex.Message, StringComparison.Ordinal);
-        // The non-credential context ("bad gateway") should still be visible
-        // — diagnostics aren't sacrificed for sanitisation.
-        Assert.Contains("bad gateway", ex.Message, StringComparison.Ordinal);
-    }
+            Assert.DoesNotContain(tokenValue, ex.Message, StringComparison.Ordinal);
+            Assert.Contains("<redacted>", ex.Message, StringComparison.Ordinal);
+            // The non-credential context ("bad gateway") should still be visible
+            // — diagnostics aren't sacrificed for sanitisation.
+            Assert.Contains("bad gateway", ex.Message, StringComparison.Ordinal);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_HttpError_TruncatesLargeBody()
-    {
-        var bigBody = new string('y', 4000);
-        var http = StubHttpClientFactory.ReturningJson(bigBody, HttpStatusCode.InternalServerError);
-        var collector = new SoftwareOneCredentialCollector(http);
+        [Fact]
+        public async Task LookupTokenAsync_HttpError_TruncatesLargeBody()
+        {
+            var bigBody = new string('y', 4000);
+            var http = StubHttpClientFactory.ReturningJson(bigBody, HttpStatusCode.InternalServerError);
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
 
-        Assert.Contains("[truncated]", ex.Message, StringComparison.Ordinal);
-        Assert.True(ex.Message.Length < 1024, $"Expected truncated message, was {ex.Message.Length} chars");
-    }
+            Assert.Contains("[truncated]", ex.Message, StringComparison.Ordinal);
+            Assert.True(ex.Message.Length < 1024, $"Expected truncated message, was {ex.Message.Length} chars");
+        }
 
-    [Fact]
-    public void SanitiseErrorBody_RedactsTokenWithinKeptWindowAndTruncates()
-    {
-        // Token sits well inside the first 512 chars so it's both redacted
-        // and visible after truncation. Covers the common case: a small
-        // error envelope wrapped in a much larger HTML page from a proxy.
-        var body = new string('a', 200) + "tok-xyz" + new string('b', 1000);
-        var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(body, "tok-xyz");
+        [Fact]
+        public void SanitiseErrorBody_RedactsTokenWithinKeptWindowAndTruncates()
+        {
+            // Token sits well inside the first 512 chars so it's both redacted
+            // and visible after truncation. Covers the common case: a small
+            // error envelope wrapped in a much larger HTML page from a proxy.
+            var body = new string('a', 200) + "tok-xyz" + new string('b', 1000);
+            var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(body, "tok-xyz");
 
-        Assert.DoesNotContain("tok-xyz", sanitised, StringComparison.Ordinal);
-        Assert.Contains("<redacted>", sanitised, StringComparison.Ordinal);
-        Assert.EndsWith("[truncated]", sanitised, StringComparison.Ordinal);
-    }
+            Assert.DoesNotContain("tok-xyz", sanitised, StringComparison.Ordinal);
+            Assert.Contains("<redacted>", sanitised, StringComparison.Ordinal);
+            Assert.EndsWith("[truncated]", sanitised, StringComparison.Ordinal);
+        }
 
-    [Fact]
-    public void SanitiseErrorBody_TokenPastTruncationBoundary_StillRemovedFromOutput()
-    {
-        // Pathological case: token sits past the 512-char cap. Redaction
-        // happens before truncation, but the truncated tail is dropped
-        // entirely — so even though the literal "<redacted>" marker isn't
-        // visible in the kept window, the token itself MUST NOT be either.
-        var body = new string('a', 600) + "tok-xyz" + new string('b', 600);
-        var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(body, "tok-xyz");
+        [Fact]
+        public void SanitiseErrorBody_TokenPastTruncationBoundary_StillRemovedFromOutput()
+        {
+            // Pathological case: token sits past the 512-char cap. Redaction
+            // happens before truncation, but the truncated tail is dropped
+            // entirely — so even though the literal "<redacted>" marker isn't
+            // visible in the kept window, the token itself MUST NOT be either.
+            var body = new string('a', 600) + "tok-xyz" + new string('b', 600);
+            var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(body, "tok-xyz");
 
-        Assert.DoesNotContain("tok-xyz", sanitised, StringComparison.Ordinal);
-        Assert.EndsWith("[truncated]", sanitised, StringComparison.Ordinal);
-    }
+            Assert.DoesNotContain("tok-xyz", sanitised, StringComparison.Ordinal);
+            Assert.EndsWith("[truncated]", sanitised, StringComparison.Ordinal);
+        }
 
-    [Theory]
-    [InlineData("https://api.softwareone.com/")]
-    [InlineData("https://test.softwareone.com:8443/")]
-    public void ValidateSecureBaseUrl_AcceptsHttps(string url)
-    {
-        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
-        Assert.True(result.Successful);
-    }
+        [Theory]
+        [InlineData("https://api.softwareone.com/")]
+        [InlineData("https://test.softwareone.com:8443/")]
+        public void ValidateSecureBaseUrl_AcceptsHttps(string url)
+        {
+            var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+            Assert.True(result.Successful);
+        }
 
-    [Theory]
-    [InlineData("http://127.0.0.1:8080/")]
-    [InlineData("http://localhost:5000/")]
-    public void ValidateSecureBaseUrl_AcceptsHttpLoopback(string url)
-    {
-        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
-        Assert.True(result.Successful);
-    }
+        [Theory]
+        [InlineData("http://127.0.0.1:8080/")]
+        [InlineData("http://localhost:5000/")]
+        public void ValidateSecureBaseUrl_AcceptsHttpLoopback(string url)
+        {
+            var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+            Assert.True(result.Successful);
+        }
 
-    [Theory]
-    [InlineData("http://api.softwareone.com/")]
-    [InlineData("http://example.com/")]
-    public void ValidateSecureBaseUrl_RejectsCleartextHttpForNonLoopback(string url)
-    {
-        // The token rides in the URL query — cleartext http would expose it
-        // on every hop and in any access log.
-        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
-        Assert.False(result.Successful);
-        Assert.Contains("https", result.Message ?? string.Empty, StringComparison.Ordinal);
-    }
+        [Theory]
+        [InlineData("http://api.softwareone.com/")]
+        [InlineData("http://example.com/")]
+        public void ValidateSecureBaseUrl_RejectsCleartextHttpForNonLoopback(string url)
+        {
+            // The token rides in the URL query — cleartext http would expose it
+            // on every hop and in any access log.
+            var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+            Assert.False(result.Successful);
+            Assert.Contains("https", result.Message ?? string.Empty, StringComparison.Ordinal);
+        }
 
-    [Theory]
-    [InlineData("ftp://example.com/")]
-    [InlineData("not-a-url")]
-    public void ValidateSecureBaseUrl_RejectsNonHttpSchemesAndGarbage(string url)
-    {
-        var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
-        Assert.False(result.Successful);
-    }
+        [Theory]
+        [InlineData("ftp://example.com/")]
+        [InlineData("not-a-url")]
+        public void ValidateSecureBaseUrl_RejectsNonHttpSchemesAndGarbage(string url)
+        {
+            var result = SoftwareOneCredentialCollector.ValidateSecureBaseUrl(url);
+            Assert.False(result.Successful);
+        }
 
-    [Fact]
-    public async Task LookupTokenAsync_MalformedJson_Throws()
-    {
-        var http = StubHttpClientFactory.ReturningJson("{ not json");
-        var collector = new SoftwareOneCredentialCollector(http);
+        [Fact]
+        public async Task LookupTokenAsync_MalformedJson_Throws()
+        {
+            var http = StubHttpClientFactory.ReturningJson("{ not json");
+            var collector = new SoftwareOneCredentialCollector(http);
 
-        await Assert.ThrowsAsync<System.Text.Json.JsonException>(
-            () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
-    }
+            await Assert.ThrowsAsync<System.Text.Json.JsonException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+        }
 
-    [Fact]
-    public void Constructor_NullHttpClientFactory_Throws()
-    {
-        Assert.Throws<ArgumentNullException>(() => new SoftwareOneCredentialCollector(null!));
+        [Fact]
+        public void Constructor_NullHttpClientFactory_Throws() => Assert.Throws<ArgumentNullException>(() => new SoftwareOneCredentialCollector(null!));
     }
 }

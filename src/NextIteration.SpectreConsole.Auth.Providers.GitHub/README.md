@@ -18,7 +18,7 @@ Drops a ready-to-use `GitHubCredential`, `GitHubToken`, authentication service, 
 dotnet add package NextIteration.SpectreConsole.Auth.Providers.GitHub
 ```
 
-Requires the core package (`NextIteration.SpectreConsole.Auth`) — NuGet pulls it in transitively.
+Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 1.0.0) — NuGet pulls it in transitively.
 
 ---
 

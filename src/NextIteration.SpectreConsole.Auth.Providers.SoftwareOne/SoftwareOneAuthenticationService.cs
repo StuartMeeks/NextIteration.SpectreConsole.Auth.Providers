@@ -1,5 +1,6 @@
 using NextIteration.SpectreConsole.Auth.Persistence;
 using NextIteration.SpectreConsole.Auth.Services;
+
 using System.Text.Json;
 
 namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
