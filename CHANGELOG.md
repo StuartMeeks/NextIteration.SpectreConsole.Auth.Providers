@@ -11,6 +11,12 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.0 / 1.0.0 / 1.0.0 / 1.0.0] — 2026-08-21
+
+_First stable release of all four providers (Adobe → 1.0.0, Airtable → 1.0.0, SoftwareOne → 1.0.0, GitHub → 1.0.0). A coordinated 1.0.0: the `ICredentialCollector`, `ICredentialSummaryProvider` and `IAuthenticationService<TCredential, TToken>` surfaces each provider ships are now covered by SemVer, so a breaking change to them will require a 2.0.0. The release adopts core `NextIteration.SpectreConsole.Auth` 1.0.0. Consumers already on the latest 0.x need no source changes; the version jump is a stability commitment, not a set of breaking changes._
+
 ### Changed
 - **Core library floor raised to `[1.0.0,2.0.0)`.** `NextIteration.SpectreConsole.Auth`
   1.0.0 is the first stable core release; the provider packages now floor there and cap
@@ -278,6 +284,7 @@ _SoftwareOne Marketplace API token — pass-through._
 - Per-package NuGet metadata: MIT license expression, SourceLink, deterministic builds, embedded symbols, snupkg, capped version ranges for cross-package dependencies.
 - GitHub Actions CI with per-package tag-triggered publishing (`adobe-v*` → publishes Adobe only, etc.).
 
+[1.0.0 / 1.0.0 / 1.0.0 / 1.0.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.4.0 / 0.4.0 / 0.5.0 / 0.2.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.3.0 / 0.3.0 / 0.4.0]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
 [0.2.3 / 0.2.3 / 0.3.3]: https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases
