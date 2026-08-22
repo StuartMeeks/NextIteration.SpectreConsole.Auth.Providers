@@ -11,6 +11,12 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.1 / 1.0.1 / 1.0.1 / 1.0.1] — 2026-08-22
+
+_Coordinated patch release of all four providers (Adobe → 1.0.1, Airtable → 1.0.1, SoftwareOne → 1.0.1, GitHub → 1.0.1). Adopts core `NextIteration.SpectreConsole.Auth` 1.0.1; the remaining changes are CI-only and test-only. No public API or runtime behaviour change — consumers need no source changes._
+
 ### Changed
 - **Core library floor raised to `[1.0.1,2.0.0)`.** Adopts
   `NextIteration.SpectreConsole.Auth` 1.0.1, a safe drop-in maintenance release over 1.0.0
