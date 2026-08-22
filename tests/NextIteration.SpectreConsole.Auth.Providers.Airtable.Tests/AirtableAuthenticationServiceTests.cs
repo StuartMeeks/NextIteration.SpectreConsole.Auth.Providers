@@ -38,7 +38,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests
             var service = new AirtableAuthenticationService(new FakeCredentialManager());
 
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => service.AuthenticateAsync((AirtableCredential)null!));
+                () => service.AuthenticateAsync(null!));
         }
 
         [Theory]

@@ -33,7 +33,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             var service = new SoftwareOneAuthenticationService(new FakeCredentialManager());
 
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => service.AuthenticateAsync((SoftwareOneCredential)null!));
+                () => service.AuthenticateAsync(null!));
         }
 
         [Theory]
