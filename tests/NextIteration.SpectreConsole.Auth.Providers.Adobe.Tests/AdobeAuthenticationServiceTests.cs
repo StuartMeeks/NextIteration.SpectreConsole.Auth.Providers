@@ -136,7 +136,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => service.AuthenticateAsync((AdobeCredential)null!));
+                () => service.AuthenticateAsync(null!));
         }
 
         [Fact]

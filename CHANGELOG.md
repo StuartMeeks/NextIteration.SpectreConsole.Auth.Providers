@@ -11,6 +11,22 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **CodeQL C# analysis switched to `build-mode: none` (buildless).** The workflow's
+  `paths-ignore: **/obj/**` was silently inert: GitHub applies path filters to a compiled
+  language only when it is analysed without a build, so under the explicit `dotnet build`
+  the xUnit auto-generated entry point in `obj/` was analysed and raised
+  `cs/missed-ternary-operator` on every target framework. Buildless extraction honours the
+  filter, so the generated entry point is genuinely excluded, and it reads source across all
+  target frameworks at once. Synced from the corrected `NextIteration.Standards` template
+  (§4.4). CI-only change; no package, public API, or behaviour change for consumers.
+
+### Fixed
+- **Removed redundant `(TCredential)null!` upcasts in the authentication-service tests**
+  (Adobe, Airtable, SoftwareOne), resolving the `cs/useless-upcast` code-scanning alerts.
+  Passing an argument already selects the single one-argument `AuthenticateAsync` overload,
+  so the cast was unnecessary. Test-only change.
+
 ---
 
 ## [1.0.0 / 1.0.0 / 1.0.0 / 1.0.0] — 2026-08-21
