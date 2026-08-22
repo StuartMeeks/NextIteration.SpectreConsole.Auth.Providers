@@ -12,6 +12,15 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Core library floor raised to `[1.0.1,2.0.0)`.** Adopts
+  `NextIteration.SpectreConsole.Auth` 1.0.1, a safe drop-in maintenance release over 1.0.0
+  — no API or behaviour change (an internal null-check hardening in the file backend plus a
+  CI-only move to buildless CodeQL). The floor tracks the version the providers are built
+  and tested against (STANDARD.md §1.4); the `ICredentialCollector` /
+  `ICredentialSummaryProvider` / `ICredentialManager` contracts the providers depend on are
+  unchanged, so a provider consumer needs no source changes beyond referencing core 1.0.1.
+  The upper cap is unchanged. Validated: clean build and full test suite green on `net8.0`
+  and `net10.0`.
 - **CodeQL C# analysis switched to `build-mode: none` (buildless).** The workflow's
   `paths-ignore: **/obj/**` was silently inert: GitHub applies path filters to a compiled
   language only when it is analysed without a build, so under the explicit `dotnet build`

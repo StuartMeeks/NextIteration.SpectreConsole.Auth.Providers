@@ -50,15 +50,17 @@
 			ICredentialSummaryProvider / ICredentialManager contracts could
 			break. Bump the upper bound deliberately after validating against
 			the next major.
-			Floored at 1.0.0: validated against the core 1.0.0 surface, which
-			adds the ExportCredentialsAsync / RestoreCredentialAsync members to
-			ICredentialManager (the accounts export/import feature). The
-			collector and summary-provider contracts the providers implement are
-			unchanged from 0.7.1; the floor moves to 1.0.0 because the test
-			doubles implement the expanded ICredentialManager. 1.0.0 also keeps
-			the per-TFM Microsoft platform floors introduced in 0.7.1.
+			Floored at 1.0.1: the version built and tested against. The 1.0.0
+			surface added the ExportCredentialsAsync / RestoreCredentialAsync
+			members to ICredentialManager (the accounts export/import feature),
+			which the test doubles implement. 1.0.1 is a safe drop-in
+			maintenance release over 1.0.0 — no API or behaviour change (an
+			internal null-check hardening in the file backend plus a CI-only
+			CodeQL move) — so the ICredentialCollector / ICredentialSummaryProvider
+			/ ICredentialManager contracts the providers depend on are unchanged.
+			The floor tracks the tested-against version per STANDARD.md 1.4.
 		-->
-		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[1.0.0,2.0.0)" />
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[1.0.1,2.0.0)" />
 	</ItemGroup>
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). STANDARD.md 1.7. -->
