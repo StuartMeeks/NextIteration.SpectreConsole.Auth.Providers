@@ -24,10 +24,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         }
 
         /// <inheritdoc />
-        public async Task<SoftwareOneToken> AuthenticateAsync()
+        public async Task<SoftwareOneToken> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
             var credentialJson = await _credentialManager
-                .GetSelectedCredentialAsync(SoftwareOneCredential.ProviderName)
+                .GetSelectedCredentialAsync(SoftwareOneCredential.ProviderName, cancellationToken)
                 .ConfigureAwait(false);
 
             if (string.IsNullOrEmpty(credentialJson))
@@ -38,11 +38,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
             var credential = JsonSerializer.Deserialize<SoftwareOneCredential>(credentialJson, SoftwareOneCredential.JsonOptions)
                 ?? throw new InvalidOperationException($"Failed to deserialize {SoftwareOneCredential.ProviderName} credential.");
 
-            return await AuthenticateAsync(credential).ConfigureAwait(false);
+            return await AuthenticateAsync(credential, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public Task<SoftwareOneToken> AuthenticateAsync(SoftwareOneCredential credential)
+        public Task<SoftwareOneToken> AuthenticateAsync(SoftwareOneCredential credential, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(credential);
             ValidateCredential(credential);
@@ -57,7 +57,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         }
 
         /// <inheritdoc />
-        public Task<bool> ValidateTokenAsync(SoftwareOneToken token)
+        public Task<bool> ValidateTokenAsync(SoftwareOneToken token, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(token);
             return Task.FromResult(!token.IsExpired);

@@ -31,10 +31,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
         }
 
         /// <inheritdoc />
-        public async Task<AirtableToken> AuthenticateAsync()
+        public async Task<AirtableToken> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
             var credentialJson = await _credentialManager
-                .GetSelectedCredentialAsync(AirtableCredential.ProviderName)
+                .GetSelectedCredentialAsync(AirtableCredential.ProviderName, cancellationToken)
                 .ConfigureAwait(false);
 
             if (string.IsNullOrEmpty(credentialJson))
@@ -45,11 +45,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
             var credential = JsonSerializer.Deserialize<AirtableCredential>(credentialJson, AirtableCredential.JsonOptions)
                 ?? throw new InvalidOperationException($"Failed to deserialize {AirtableCredential.ProviderName} credential.");
 
-            return await AuthenticateAsync(credential).ConfigureAwait(false);
+            return await AuthenticateAsync(credential, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public Task<AirtableToken> AuthenticateAsync(AirtableCredential credential)
+        public Task<AirtableToken> AuthenticateAsync(AirtableCredential credential, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(credential);
             ValidateCredential(credential);
@@ -62,7 +62,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
         }
 
         /// <inheritdoc />
-        public Task<bool> ValidateTokenAsync(AirtableToken token)
+        public Task<bool> ValidateTokenAsync(AirtableToken token, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(token);
             return Task.FromResult(!token.IsExpired);

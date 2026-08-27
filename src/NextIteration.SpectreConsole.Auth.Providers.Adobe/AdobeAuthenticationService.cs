@@ -55,10 +55,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         }
 
         /// <inheritdoc />
-        public async Task<AdobeToken> AuthenticateAsync()
+        public async Task<AdobeToken> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
             var credentialJson = await _credentialManager
-                .GetSelectedCredentialAsync(AdobeCredential.ProviderName)
+                .GetSelectedCredentialAsync(AdobeCredential.ProviderName, cancellationToken)
                 .ConfigureAwait(false);
 
             if (string.IsNullOrEmpty(credentialJson))
@@ -69,11 +69,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             var credential = JsonSerializer.Deserialize<AdobeCredential>(credentialJson, AdobeCredential.JsonOptions)
                 ?? throw new InvalidOperationException($"Failed to deserialize {AdobeCredential.ProviderName} credential.");
 
-            return await AuthenticateAsync(credential).ConfigureAwait(false);
+            return await AuthenticateAsync(credential, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<AdobeToken> AuthenticateAsync(AdobeCredential credential)
+        public async Task<AdobeToken> AuthenticateAsync(AdobeCredential credential, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(credential);
             ValidateCredential(credential);
@@ -96,8 +96,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
                 ["scope"] = DefaultScopes,
             });
 
-            using var response = await client.PostAsync(tokenEndpoint, requestContent).ConfigureAwait(false);
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var response = await client.PostAsync(tokenEndpoint, requestContent, cancellationToken).ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -125,7 +125,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         }
 
         /// <inheritdoc />
-        public Task<bool> ValidateTokenAsync(AdobeToken token)
+        public Task<bool> ValidateTokenAsync(AdobeToken token, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(token);
             return Task.FromResult(!token.IsExpired);

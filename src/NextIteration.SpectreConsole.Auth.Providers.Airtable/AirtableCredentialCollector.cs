@@ -18,7 +18,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
         public string ProviderName => AirtableCredential.ProviderName;
 
         /// <inheritdoc />
-        public async Task<(string credentialData, string environment)> CollectAsync()
+        public async Task<(string credentialData, string environment)> CollectAsync(CancellationToken cancellationToken = default)
         {
             var accessToken = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Access Token:")
@@ -30,7 +30,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
                     .Title("Select environment:")
-                    .AddChoices(AirtableCredential.SupportedEnvironments)).ConfigureAwait(false);
+                    .AddChoices(AirtableCredential.SupportedEnvironments), cancellationToken).ConfigureAwait(false);
 
             var credential = new AirtableCredential
             {

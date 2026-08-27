@@ -81,12 +81,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         public string ProviderName => GitHubCredential.ProviderName;
 
         /// <inheritdoc />
-        public async Task<(string credentialData, string environment)> CollectAsync()
+        public async Task<(string credentialData, string environment)> CollectAsync(CancellationToken cancellationToken = default)
         {
             var host = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter GitHub host:")
                     .DefaultValue(DefaultHost)
-                    .Validate(ValidateHost)).ConfigureAwait(false);
+                    .Validate(ValidateHost), cancellationToken).ConfigureAwait(false);
 
             var clientId = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter OAuth App client id:")
@@ -104,7 +104,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             var environment = DeriveEnvironment(host);
 
             // 1. Ask GitHub for a device + user code.
-            var deviceCode = await RequestDeviceCodeAsync(webBaseUrl, clientId, scopes).ConfigureAwait(false);
+            var deviceCode = await RequestDeviceCodeAsync(webBaseUrl, clientId, scopes, cancellationToken).ConfigureAwait(false);
 
             // 2. Tell the user where to go and what to type.
             AnsiConsole.Write(new Panel(
@@ -119,7 +119,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
 
             // 4. Enrich with the authenticated user's identity.
             var accessToken = tokenDto.AccessToken!;
-            var user = await LookupUserAsync(apiBaseUrl, accessToken).ConfigureAwait(false);
+            var user = await LookupUserAsync(apiBaseUrl, accessToken, cancellationToken).ConfigureAwait(false);
 
             DateTimeOffset? expiresAt = tokenDto.ExpiresIn is { } seconds
                 ? _now() + TimeSpan.FromSeconds(seconds)
@@ -149,7 +149,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         /// <c>POST {web}/login/device/code</c>. Throws on any non-success status
         /// or malformed body.
         /// </summary>
-        internal async Task<GitHubDeviceCodeDto> RequestDeviceCodeAsync(Uri webBaseUrl, string clientId, string scopes)
+        internal async Task<GitHubDeviceCodeDto> RequestDeviceCodeAsync(Uri webBaseUrl, string clientId, string scopes, CancellationToken cancellationToken = default)
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
 
@@ -163,8 +163,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             };
             ApplyJsonHeaders(request);
 
-            using var response = await client.SendAsync(request).ConfigureAwait(false);
-            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -200,7 +200,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     ["client_id"] = clientId,
                     ["device_code"] = deviceCode.DeviceCode,
                     ["grant_type"] = DeviceCodeGrantType,
-                }).ConfigureAwait(false);
+                }, cancellationToken).ConfigureAwait(false);
 
                 if (!string.IsNullOrEmpty(dto.AccessToken))
                 {
@@ -240,7 +240,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         /// Resolves the authenticated user via <c>GET {api}user</c>. Throws on
         /// any non-success status or malformed body.
         /// </summary>
-        internal async Task<GitHubUserDto> LookupUserAsync(Uri apiBaseUrl, string accessToken)
+        internal async Task<GitHubUserDto> LookupUserAsync(Uri apiBaseUrl, string accessToken, CancellationToken cancellationToken = default)
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
 
@@ -249,8 +249,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             request.Headers.UserAgent.ParseAdd(UserAgent);
 
-            using var response = await client.SendAsync(request).ConfigureAwait(false);
-            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -263,7 +263,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     "GitHub user lookup returned a success status with a body that did not deserialize.");
         }
 
-        private async Task<GitHubAccessTokenDto> PostTokenRequestAsync(Uri webBaseUrl, Dictionary<string, string> form)
+        private async Task<GitHubAccessTokenDto> PostTokenRequestAsync(Uri webBaseUrl, Dictionary<string, string> form, CancellationToken cancellationToken = default)
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
 
@@ -273,8 +273,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             };
             ApplyJsonHeaders(request);
 
-            using var response = await client.SendAsync(request).ConfigureAwait(false);
-            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             // GitHub returns 200 even for the pending/slow_down states (the
             // error lives in the JSON body), so a non-success status here is a
