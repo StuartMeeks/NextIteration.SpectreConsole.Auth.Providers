@@ -29,7 +29,16 @@
 			IDE0005 still gates the shipping projects. STANDARD.md 2.7 needs the
 			matching amendment estate-wide.
 		-->
-		<NoWarn>$(NoWarn);CA1707;CA1515;CA2007;IDE0005</NoWarn>
+		<!--
+			xUnit1051 (pass TestContext.Current.CancellationToken) fires at every call into
+			ICredentialManager / IAuthenticationService / ICredentialCollector now that their
+			members accept a CancellationToken (core 2.0.0) — 248 sites across the four test
+			projects. The analyzer's benefit is making a cancelled test run stop promptly;
+			these tests are sub-second and the platform tears them down anyway, so threading a
+			token through every call would add noise far out of proportion. Suppressed
+			deliberately, matching the same suppression and reasoning in the core package.
+		-->
+		<NoWarn>$(NoWarn);CA1707;CA1515;CA2007;IDE0005;xUnit1051</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

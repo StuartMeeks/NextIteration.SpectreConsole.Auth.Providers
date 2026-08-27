@@ -26,12 +26,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         public string ProviderName => AdobeCredential.ProviderName;
 
         /// <inheritdoc />
-        public async Task<(string credentialData, string environment)> CollectAsync()
+        public async Task<(string credentialData, string environment)> CollectAsync(CancellationToken cancellationToken = default)
         {
             var imsUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter IMS URL:")
                     .DefaultValue(DefaultImsUrl)
-                    .Validate(ValidateSecureUrl)).ConfigureAwait(false);
+                    .Validate(ValidateSecureUrl), cancellationToken).ConfigureAwait(false);
 
             var apiKey = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter API Key (OAuth2 client_id):")
@@ -45,12 +45,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             var baseUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Base URL:")
                     .DefaultValue(DefaultBaseUrl)
-                    .Validate(ValidateSecureUrl)).ConfigureAwait(false);
+                    .Validate(ValidateSecureUrl), cancellationToken).ConfigureAwait(false);
 
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
                     .Title("Select environment:")
-                    .AddChoices(AdobeCredential.SupportedEnvironments)).ConfigureAwait(false);
+                    .AddChoices(AdobeCredential.SupportedEnvironments), cancellationToken).ConfigureAwait(false);
 
             var credential = new AdobeCredential
             {

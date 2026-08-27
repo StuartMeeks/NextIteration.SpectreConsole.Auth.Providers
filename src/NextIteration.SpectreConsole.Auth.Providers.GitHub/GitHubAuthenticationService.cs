@@ -63,10 +63,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         }
 
         /// <inheritdoc />
-        public async Task<GitHubToken> AuthenticateAsync()
+        public async Task<GitHubToken> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
             var credentialJson = await _credentialManager
-                .GetSelectedCredentialAsync(GitHubCredential.ProviderName)
+                .GetSelectedCredentialAsync(GitHubCredential.ProviderName, cancellationToken)
                 .ConfigureAwait(false);
 
             if (string.IsNullOrEmpty(credentialJson))
@@ -77,11 +77,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             var credential = JsonSerializer.Deserialize<GitHubCredential>(credentialJson, GitHubCredential.JsonOptions)
                 ?? throw new InvalidOperationException($"Failed to deserialize {GitHubCredential.ProviderName} credential.");
 
-            return await AuthenticateAsync(credential).ConfigureAwait(false);
+            return await AuthenticateAsync(credential, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<GitHubToken> AuthenticateAsync(GitHubCredential credential)
+        public async Task<GitHubToken> AuthenticateAsync(GitHubCredential credential, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(credential);
             ValidateCredential(credential);
@@ -93,7 +93,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             // to do it with; otherwise pass the stored token straight through.
             if (isExpired && !string.IsNullOrEmpty(credential.RefreshToken))
             {
-                return await RefreshAsync(credential).ConfigureAwait(false);
+                return await RefreshAsync(credential, cancellationToken).ConfigureAwait(false);
             }
 
             return new GitHubToken
@@ -105,13 +105,13 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         }
 
         /// <inheritdoc />
-        public Task<bool> ValidateTokenAsync(GitHubToken token)
+        public Task<bool> ValidateTokenAsync(GitHubToken token, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(token);
             return Task.FromResult(!token.IsExpired);
         }
 
-        private async Task<GitHubToken> RefreshAsync(GitHubCredential credential)
+        private async Task<GitHubToken> RefreshAsync(GitHubCredential credential, CancellationToken cancellationToken = default)
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
 
@@ -128,8 +128,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Headers.UserAgent.ParseAdd(GitHubCredentialCollector.UserAgent);
 
-            using var response = await client.SendAsync(request).ConfigureAwait(false);
-            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {

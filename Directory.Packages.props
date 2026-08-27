@@ -60,7 +60,7 @@
 			/ ICredentialManager contracts the providers depend on are unchanged.
 			The floor tracks the tested-against version per STANDARD.md 1.4.
 		-->
-		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[1.0.1,2.0.0)" />
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[2.0.0,3.0.0)" />
 	</ItemGroup>
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). STANDARD.md 1.7. -->

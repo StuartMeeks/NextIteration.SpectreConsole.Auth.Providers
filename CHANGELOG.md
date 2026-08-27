@@ -13,6 +13,41 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0 / 2.0.0 / 2.0.0 / 2.0.0] — 2026-08-28
+
+_Coordinated major release of all four providers, adopting core `NextIteration.SpectreConsole.Auth` 2.0.0._
+
+### Breaking
+
+- **Adopts core 2.0.0, which adds a `CancellationToken` to three provider-facing interfaces.**
+  The dependency range moves from `[1.0.1,2.0.0)` to `[2.0.0,3.0.0)`, so **these providers
+  require core 2.x and will not resolve against 1.x** — and 1.x providers will not resolve
+  against core 2.x. That refusal is the cap doing its job: the providers call
+  `ICredentialManager`, so a 1.x provider assembly running against core 2.x would fail at
+  runtime with `MissingMethodException`. The version range turns that into an error you read
+  at restore time instead.
+
+- **`ICredentialCollector.CollectAsync`, `IAuthenticationService<,>`'s three members, and the
+  `ICredentialManager` surface each take a trailing `CancellationToken cancellationToken =
+  default`.** Consumers calling these providers keep compiling, since every added parameter is
+  optional. Anyone who has *subclassed* or re-implemented one of these types must update their
+  signatures.
+
+### Changed
+
+- **The token is threaded to where it can actually do something**, not merely accepted and
+  dropped: into the core credential lookups, the Spectre prompts each collector runs, and the
+  outgoing HTTP calls — Adobe's IMS token endpoint, GitHub's device-code and user-lookup
+  requests, SoftwareOne's token lookup. The authentication layer is the one that waits on a
+  network, so accepting a token there and ignoring it would have been the worst of both.
+
+- **`xUnit1051` is suppressed in the four test projects**, matching the core package and for
+  the same reason: it fires at 248 call sites the moment those interfaces accept a token, and
+  threading one through every existing assertion would bury the change for a benefit —
+  prompter teardown of sub-second tests — that does not apply here.
+
+---
+
 ## [1.0.1 / 1.0.1 / 1.0.1 / 1.0.1] — 2026-08-22
 
 _Coordinated patch release of all four providers (Adobe → 1.0.1, Airtable → 1.0.1, SoftwareOne → 1.0.1, GitHub → 1.0.1). Adopts core `NextIteration.SpectreConsole.Auth` 1.0.1; the remaining changes are CI-only and test-only. No public API or runtime behaviour change — consumers need no source changes._

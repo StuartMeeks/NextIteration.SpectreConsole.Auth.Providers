@@ -73,7 +73,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         public string ProviderName => SoftwareOneCredential.ProviderName;
 
         /// <inheritdoc />
-        public async Task<(string credentialData, string environment)> CollectAsync()
+        public async Task<(string credentialData, string environment)> CollectAsync(CancellationToken cancellationToken = default)
         {
             var apiToken = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter API Token:")
@@ -85,24 +85,24 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
             var baseUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Base URL:")
                     .DefaultValue(DefaultBaseUrl)
-                    .Validate(ValidateSecureBaseUrl)).ConfigureAwait(false);
+                    .Validate(ValidateSecureBaseUrl), cancellationToken).ConfigureAwait(false);
 
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
                     .Title("Select environment:")
-                    .AddChoices(SoftwareOneCredential.SupportedEnvironments)).ConfigureAwait(false);
+                    .AddChoices(SoftwareOneCredential.SupportedEnvironments), cancellationToken).ConfigureAwait(false);
 
             var actor = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
                     .Title("Select actor:")
-                    .AddChoices(SoftwareOneCredential.SupportedActors)).ConfigureAwait(false);
+                    .AddChoices(SoftwareOneCredential.SupportedActors), cancellationToken).ConfigureAwait(false);
 
             var baseUrl = new Uri(baseUrlInput, UriKind.Absolute);
 
             // Validate the token against the SoftwareOne Marketplace API.
             // Failures throw; the caller never reaches the serialise step
             // and the credential is never stored.
-            var tokenDto = await LookupTokenAsync(baseUrl, apiToken).ConfigureAwait(false);
+            var tokenDto = await LookupTokenAsync(baseUrl, apiToken, cancellationToken).ConfigureAwait(false);
 
             var credential = new SoftwareOneCredential
             {
@@ -127,7 +127,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         /// any failure mode (HTTP error, zero matches, multiple matches,
         /// malformed response).
         /// </summary>
-        internal async Task<SoftwareOneTokenDto> LookupTokenAsync(Uri baseUrl, string apiToken)
+        internal async Task<SoftwareOneTokenDto> LookupTokenAsync(Uri baseUrl, string apiToken, CancellationToken cancellationToken = default)
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
 
@@ -143,8 +143,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            using var response = await client.SendAsync(request).ConfigureAwait(false);
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
