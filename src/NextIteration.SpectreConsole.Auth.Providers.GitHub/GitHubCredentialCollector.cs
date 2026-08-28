@@ -2,6 +2,7 @@ using Spectre.Console;
 
 using NextIteration.SpectreConsole.Auth.Commands;
 
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -325,6 +326,16 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         private static string NormalizeHost(string host)
             => host.Trim().TrimEnd('/');
 
+        // Characters that would let a pasted value smuggle userinfo, a path, a
+        // query, a fragment or a scheme past the https://{host}/ interpolation.
+        private static readonly char[] HostRejectedChars = ['/', '\\', '@', '?', '#', ':'];
+
+        // The same set minus ':', for the unbracketed IPv6 literal case.
+        private static readonly char[] HostRejectedCharsExceptColon = ['/', '\\', '@', '?', '#'];
+
+        private const string BareHostError
+            = "Must be a bare host such as github.com, ghe.example.com or ghe.example.com:8443";
+
         internal static ValidationResult ValidateHost(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -332,12 +343,110 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                 return ValidationResult.Error("Host cannot be empty");
             }
 
-            // The host is turned into https://{host}/ — reject anything that
-            // isn't a clean host[:port] (e.g. a pasted scheme or path).
-            return Uri.TryCreate($"https://{NormalizeHost(value)}/", UriKind.Absolute, out _)
-                ? ValidationResult.Success()
-                : ValidationResult.Error("Must be a bare host such as github.com or ghe.example.com");
+            var normalized = NormalizeHost(value);
+
+            // The host is interpolated into https://{host}/, so anything Uri
+            // would read as userinfo, a port, a path, a query or a fragment has
+            // to be rejected here — Uri.TryCreate happily parses all of them,
+            // and a userinfo prefix ("github.com@evil.example.com") sends the
+            // access token and every later refresh POST to the trailing host
+            // while still reading as github.com in `accounts list`.
+            if (!TrySplitHostAndPort(normalized, out var host, out var port))
+            {
+                return ValidationResult.Error(BareHostError);
+            }
+
+            if (host.Length == 0 || Uri.CheckHostName(host) == UriHostNameType.Unknown)
+            {
+                return ValidationResult.Error(BareHostError);
+            }
+
+            if (port.Length != 0
+                && !(ushort.TryParse(port, NumberStyles.None, CultureInfo.InvariantCulture, out var portNumber)
+                    && portNumber != 0))
+            {
+                return ValidationResult.Error(BareHostError);
+            }
+
+            // Belt-and-braces: whatever Uri makes of the value must be exactly
+            // the host we just validated and nothing more.
+            if (!Uri.TryCreate($"https://{normalized}/", UriKind.Absolute, out var probe)
+                || probe.UserInfo.Length != 0
+                || probe.AbsolutePath != "/"
+                || probe.Query.Length != 0
+                || probe.Fragment.Length != 0)
+            {
+                return ValidationResult.Error(BareHostError);
+            }
+
+            return ValidationResult.Success();
         }
+
+        /// <summary>
+        /// Splits a bare <c>host</c> or <c>host:port</c> — including a bracketed
+        /// IPv6 literal — into its two parts. Returns <see langword="false"/>
+        /// when the value carries anything else (userinfo, a path, a scheme).
+        /// </summary>
+        private static bool TrySplitHostAndPort(string value, out string host, out string port)
+        {
+            host = value;
+            port = string.Empty;
+
+            if (value.StartsWith('['))
+            {
+                var close = value.IndexOf(']', StringComparison.Ordinal);
+                if (close < 0)
+                {
+                    return false;
+                }
+
+                host = value[..(close + 1)];
+                var rest = value[(close + 1)..];
+                if (rest.Length == 0)
+                {
+                    return true;
+                }
+
+                if (rest[0] != ':')
+                {
+                    return false;
+                }
+
+                // A colon with nothing after it is malformed, not "no port".
+                port = rest[1..];
+                return port.Length != 0 && HasNoRejectedChars(port);
+            }
+
+            var colon = value.IndexOf(':', StringComparison.Ordinal);
+            if (colon >= 0)
+            {
+                // A second colon with no brackets means an unbracketed IPv6
+                // literal, which carries no port and which the Uri round-trip
+                // below rejects anyway (the bracketed form is the one to type).
+                if (value.IndexOf(':', colon + 1) >= 0)
+                {
+                    return HasNoRejectedCharsExceptColon(value);
+                }
+
+                host = value[..colon];
+                port = value[(colon + 1)..];
+
+                // A colon with nothing after it is malformed, not "no port".
+                if (port.Length == 0)
+                {
+                    return false;
+                }
+            }
+
+            return HasNoRejectedChars(host) && HasNoRejectedChars(port);
+        }
+
+        private static bool HasNoRejectedChars(string value)
+            => value.IndexOfAny(HostRejectedChars) < 0 && !value.Any(char.IsWhiteSpace);
+
+        private static bool HasNoRejectedCharsExceptColon(string value)
+            => value.IndexOfAny(HostRejectedCharsExceptColon) < 0
+                && !value.Any(char.IsWhiteSpace);
 
         private static string FormatErrorDescription(string? description)
             => string.IsNullOrWhiteSpace(description) ? string.Empty : $" — {description}";
