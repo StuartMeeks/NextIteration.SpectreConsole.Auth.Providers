@@ -35,6 +35,8 @@ services.AddCredentialStore(opts =>
         ".my-cli", "credentials");
 });
 
+services.AddHttpClient();           // IHttpClientFactory is required
+
 services.AddSoftwareOneAuthProvider();
 
 // ... then hook up the accounts branch in your Spectre.Console configurator

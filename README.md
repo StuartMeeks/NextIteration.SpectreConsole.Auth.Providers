@@ -47,9 +47,10 @@ services.AddCredentialStore(opts =>
         ".my-cli", "credentials");
 });
 
-// Adobe's auth service hits Adobe IMS, and GitHub runs the OAuth device
-// flow + token refresh, so both need IHttpClientFactory. The others are
-// pass-through and don't require it — but registering it once is harmless.
+// Three of the four need IHttpClientFactory: Adobe's auth service hits
+// Adobe IMS, GitHub runs the OAuth device flow + token refresh, and
+// SoftwareOne's *collector* looks the token up at `accounts add` time.
+// Only Airtable is fully pass-through — but registering it once is harmless.
 services.AddHttpClient();
 
 // One line per provider you want to support:
