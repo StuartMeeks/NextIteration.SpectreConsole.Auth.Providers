@@ -64,7 +64,18 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         /// </summary>
         public DateTimeOffset? AccessTokenExpiresAt { get; init; }
 
-        /// <summary>Space-delimited scopes the token was granted.</summary>
+        /// <summary>
+        /// Space-delimited scopes the token was granted, exactly as reported in
+        /// the token response's <c>scope</c> field.
+        /// </summary>
+        /// <remarks>
+        /// This is what GitHub granted, not what was requested — the two can
+        /// differ, and an OAuth App issuing expiring tokens may omit
+        /// <c>scope</c> altogether, in which case this is empty and
+        /// <c>accounts list</c> shows <c>(none)</c>. Reporting the requested
+        /// scopes here would send someone debugging a 403 looking in the wrong
+        /// place.
+        /// </remarks>
         public required string Scopes { get; init; }
 
         /// <summary>

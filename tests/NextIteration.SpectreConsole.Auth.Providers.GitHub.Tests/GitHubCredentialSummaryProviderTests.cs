@@ -82,5 +82,33 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             Assert.Equal("<unreadable credential>", field.Value);
         }
 
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetDisplayFields_EmptyScopes_ShowsNoneMarker(string scopes)
+        {
+            // Reachable now that the collector stores GitHub's granted scopes
+            // verbatim instead of substituting the requested ones — the
+            // substitute was never empty, so this branch could not be hit
+            // through `accounts add` at all.
+            var payload = $$"""
+            {
+              "clientId": "Iv1.id",
+              "accessToken": "gho_0123456789abcdef",
+              "scopes": "{{scopes}}",
+              "webBaseUrl": "https://github.com/",
+              "apiBaseUrl": "https://api.github.com/",
+              "login": "octocat",
+              "environment": "GitHubCom"
+            }
+            """;
+            var provider = new GitHubCredentialSummaryProvider();
+
+            var fields = provider.GetDisplayFields(payload);
+
+            var scopesField = Assert.Single(fields, f => f.Key == "Scopes");
+            Assert.Equal("(none)", scopesField.Value);
+        }
+
     }
 }
