@@ -49,6 +49,30 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests
             Assert.Equal("****", fields[0].Value);
         }
 
+        [Theory]
+        // The mask is `value.Length <= 10 ? "****" : first4 + "..." + last4`,
+        // so 10 is the last masked length and the fingerprint starts at 11.
+        // Existing coverage jumped from 3 to 31, leaving the boundary — and the
+        // README's description of it — unpinned.
+        [InlineData(9, "****")]
+        [InlineData(10, "****")]
+        [InlineData(11, "aaaa...aaaa")]
+        [InlineData(12, "aaaa...aaaa")]
+        public void GetDisplayFields_MasksAtTenCharactersOrShorter(int length, string expected)
+        {
+            var credential = new AirtableCredential
+            {
+                AccessToken = new string('a', length),
+                Environment = "Production",
+            };
+            var json = JsonSerializer.Serialize(credential, AirtableCredential.JsonOptions);
+            var provider = new AirtableCredentialSummaryProvider();
+
+            var fields = provider.GetDisplayFields(json);
+
+            Assert.Equal(expected, fields[0].Value);
+        }
+
         [Fact]
         public void GetDisplayFields_EmptyToken_ReturnsEmptyString()
         {

@@ -90,7 +90,7 @@ my-cli accounts delete <id>
 The canonical recipe is one of the existing provider projects under [`src/`](src). In short:
 
 1. New class library targeting the same framework as the core package.
-2. `PackageReference` to `NextIteration.SpectreConsole.Auth` at the current minor.
+2. `PackageReference` to `NextIteration.SpectreConsole.Auth` as a major-capped range (currently `[2.0.0,3.0.0)`), matching the other four.
 3. Types: `XxxCredential : ICredential`, `XxxToken : IToken`, `XxxAuthenticationService : IAuthenticationService<XxxCredential, XxxToken>`, `XxxCredentialCollector : ICredentialCollector`, `XxxCredentialSummaryProvider : ICredentialSummaryProvider`.
 4. A DI extension `AddXxxAuthProvider(this IServiceCollection)` that registers all of the above.
 5. A per-provider README that documents the prompts, stored fields, and authentication model.

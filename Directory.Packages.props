@@ -25,7 +25,7 @@
 		groups per-TFM during the inner build, so each provider assembly
 		picks up the floor matching the framework it is compiled for. These
 		match the per-TFM floors the core NextIteration.SpectreConsole.Auth
-		package declares from 0.7.1 onward (see the capped range below).
+		package declares (see the capped range below).
 	-->
 	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
@@ -45,19 +45,20 @@
 	<ItemGroup>
 		<PackageVersion Include="Spectre.Console" Version="0.57.2" />
 		<!--
-			Capped range: accept any patch/minor in the 1.x line, but
-			prevent a silent upgrade to 2.0.0 where the ICredentialCollector /
+			Capped range: accept any patch/minor in the 2.x line, but
+			prevent a silent upgrade to 3.0.0 where the ICredentialCollector /
 			ICredentialSummaryProvider / ICredentialManager contracts could
 			break. Bump the upper bound deliberately after validating against
 			the next major.
-			Floored at 1.0.1: the version built and tested against. The 1.0.0
-			surface added the ExportCredentialsAsync / RestoreCredentialAsync
-			members to ICredentialManager (the accounts export/import feature),
-			which the test doubles implement. 1.0.1 is a safe drop-in
-			maintenance release over 1.0.0 — no API or behaviour change (an
-			internal null-check hardening in the file backend plus a CI-only
-			CodeQL move) — so the ICredentialCollector / ICredentialSummaryProvider
-			/ ICredentialManager contracts the providers depend on are unchanged.
+			Floored at 2.0.0: the version built and tested against. That is
+			also the version the previous [1.0.1,2.0.0) cap refused, and it
+			refused it correctly — core 2.0.0 added a trailing
+			CancellationToken to ICredentialCollector.CollectAsync, to the
+			three IAuthenticationService<,> members and across the
+			ICredentialManager surface. Because the providers *implement*
+			those interfaces, a 1.x provider assembly running against core
+			2.x would fail at runtime; the range turns that into a restore
+			error instead. Consumers on core 1.x cannot use these providers.
 			The floor tracks the tested-against version per STANDARD.md 1.4.
 		-->
 		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[2.0.0,3.0.0)" />

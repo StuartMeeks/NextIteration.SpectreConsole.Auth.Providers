@@ -18,7 +18,7 @@ Drops a ready-to-use `AirtableCredential`, `AirtableToken`, authentication servi
 dotnet add package NextIteration.SpectreConsole.Auth.Providers.Airtable
 ```
 
-Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 1.0.0) — NuGet pulls it in transitively.
+Requires the core package (`NextIteration.SpectreConsole.Auth`, major-capped range `[2.0.0,3.0.0)`) — NuGet pulls it in transitively. Core 1.x is not supported: core 2.0.0 added a `CancellationToken` to the interfaces these providers implement.
 
 ---
 
@@ -80,7 +80,7 @@ Each `accounts add` run serialises an `AirtableCredential` into the encrypted ke
 | `AccessToken` | hidden prompt       | Airtable Personal Access Token (PAT)                       |
 | `Environment` | selection prompt    | `Production` / `Staging` / `Test`                          |
 
-The token never leaves the credential store unencrypted. `accounts list` renders a masked fingerprint (first four + last four characters) and four stars for anything shorter than 10 chars.
+The token never leaves the credential store unencrypted. `accounts list` renders a masked fingerprint (first four + last four characters) and four stars for anything 10 characters or shorter.
 
 ---
 
@@ -94,7 +94,7 @@ Airtable Personal Access Tokens are **long-lived** and created manually in the A
 
 ## Supported platforms
 
-Whatever the core package supports (currently Windows, macOS, Linux on .NET 10).
+Whatever the core package supports (currently Windows, macOS, Linux on .NET 8 and .NET 10).
 
 ---
 
