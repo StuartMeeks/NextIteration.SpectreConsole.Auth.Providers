@@ -77,13 +77,25 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests
             await Assert.ThrowsAsync<InvalidOperationException>(() => service.AuthenticateAsync());
         }
 
-        [Fact]
-        public async Task AuthenticateAsync_WhenSelectedJsonIsMalformed_Throws()
+        [Theory]
+        [InlineData("{ not json")]
+        [InlineData("<html><body>Sign in to continue</body></html>")]
+        // Note: an empty/whitespace stored value is not covered here — it hits
+        // the earlier "No … credential selected" guard, which is its own test.
+        public async Task AuthenticateAsync_WhenSelectedJsonIsMalformed_ThrowsActionableException(string stored)
         {
-            var manager = new FakeCredentialManager { SelectedCredentialJson = "{ not json" };
+            // A stale or corrupt stored credential must surface as something the
+            // user can act on, not a raw JsonException naming a System.Text.Json
+            // path and an internal type. The underlying JsonException is kept as
+            // the inner exception for diagnostics.
+            var manager = new FakeCredentialManager { SelectedCredentialJson = stored };
             var service = new AirtableAuthenticationService(manager);
 
-            await Assert.ThrowsAsync<JsonException>(() => service.AuthenticateAsync());
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => service.AuthenticateAsync());
+
+            Assert.Contains("accounts add", ex.Message, StringComparison.Ordinal);
+            Assert.IsType<JsonException>(ex.InnerException);
         }
 
         [Fact]

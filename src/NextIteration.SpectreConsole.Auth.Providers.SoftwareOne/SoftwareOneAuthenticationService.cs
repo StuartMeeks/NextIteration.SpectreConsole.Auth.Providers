@@ -35,8 +35,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                 throw new InvalidOperationException($"No {SoftwareOneCredential.ProviderName} credential selected.");
             }
 
-            var credential = JsonSerializer.Deserialize<SoftwareOneCredential>(credentialJson, SoftwareOneCredential.JsonOptions)
-                ?? throw new InvalidOperationException($"Failed to deserialize {SoftwareOneCredential.ProviderName} credential.");
+            var credential = DeserializeOrThrow<SoftwareOneCredential>(
+                credentialJson,
+                SoftwareOneCredential.JsonOptions,
+                $"Failed to deserialize the stored {SoftwareOneCredential.ProviderName} credential. It may have been written by an incompatible version — delete it and re-run `accounts add`.");
 
             return await AuthenticateAsync(credential, cancellationToken).ConfigureAwait(false);
         }
@@ -119,5 +121,35 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                     fieldName);
             }
         }
+        /// <summary>
+        /// Deserializes <paramref name="json"/>, turning both a literal
+        /// <c>null</c> body and a <see cref="JsonException"/> into the same
+        /// <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <remarks>
+        /// The bare <c>?? throw</c> this replaces only fired for a body that is
+        /// the literal <c>null</c>. Anything merely malformed — an HTML captive
+        /// portal interstitial, a truncated response, a payload missing a
+        /// required member — escaped as a raw <see cref="JsonException"/> whose
+        /// message names a System.Text.Json path and nothing the user can act
+        /// on. The original exception is preserved as the inner exception.
+        /// </remarks>
+        private static TValue DeserializeOrThrow<TValue>(
+            string json, JsonSerializerOptions? options, string failureMessage)
+        {
+            TValue? value;
+
+            try
+            {
+                value = JsonSerializer.Deserialize<TValue>(json, options);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(failureMessage, ex);
+            }
+
+            return value ?? throw new InvalidOperationException(failureMessage);
+        }
+
     }
 }
