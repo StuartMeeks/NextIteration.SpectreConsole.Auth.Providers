@@ -173,9 +173,13 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     $"GitHub device-code request failed: {(int)response.StatusCode} {response.StatusCode}. Body: {TruncateErrorBody(body)}");
             }
 
-            return JsonSerializer.Deserialize<GitHubDeviceCodeDto>(body, JsonOptions)
+            var deviceCode = JsonSerializer.Deserialize<GitHubDeviceCodeDto>(body, JsonOptions)
                 ?? throw new InvalidOperationException(
                     "GitHub device-code request returned a success status with a body that did not deserialize.");
+
+            ValidateDeviceCode(deviceCode);
+
+            return deviceCode;
         }
 
         /// <summary>
@@ -259,9 +263,17 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     $"GitHub user lookup failed: {(int)response.StatusCode} {response.StatusCode}. Body: {SanitiseErrorBody(body, accessToken)}");
             }
 
-            return JsonSerializer.Deserialize<GitHubUserDto>(body, JsonOptions)
+            var user = JsonSerializer.Deserialize<GitHubUserDto>(body, JsonOptions)
                 ?? throw new InvalidOperationException(
                     "GitHub user lookup returned a success status with a body that did not deserialize.");
+
+            if (string.IsNullOrWhiteSpace(user.Login))
+            {
+                throw new InvalidOperationException(
+                    "GitHub user lookup returned a 200 response with no usable login value.");
+            }
+
+            return user;
         }
 
         private async Task<GitHubAccessTokenDto> PostTokenRequestAsync(Uri webBaseUrl, Dictionary<string, string> form, CancellationToken cancellationToken = default)
@@ -447,6 +459,45 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         private static bool HasNoRejectedCharsExceptColon(string value)
             => value.IndexOfAny(HostRejectedCharsExceptColon) < 0
                 && !value.Any(char.IsWhiteSpace);
+
+        /// <summary>
+        /// Rejects a device-code response whose fields are absent in substance
+        /// rather than in shape.
+        /// </summary>
+        /// <remarks>
+        /// <c>required</c> is satisfied by a property being <em>present</em> in
+        /// the JSON, not by its value being non-null, and
+        /// <c>RespectNullableAnnotations</c> is not enabled — so a body whose
+        /// <c>device_code</c> is JSON null deserializes cleanly and is only
+        /// noticed when the poll loop posts an empty device code and GitHub
+        /// answers with an error that names nothing the user can act on.
+        /// </remarks>
+        private static void ValidateDeviceCode(GitHubDeviceCodeDto deviceCode)
+        {
+            if (string.IsNullOrWhiteSpace(deviceCode.DeviceCode))
+            {
+                throw new InvalidOperationException(
+                    "GitHub device-code request returned a 200 response with no usable device_code value.");
+            }
+
+            if (string.IsNullOrWhiteSpace(deviceCode.UserCode))
+            {
+                throw new InvalidOperationException(
+                    "GitHub device-code request returned a 200 response with no usable user_code value.");
+            }
+
+            if (string.IsNullOrWhiteSpace(deviceCode.VerificationUri))
+            {
+                throw new InvalidOperationException(
+                    "GitHub device-code request returned a 200 response with no usable verification_uri value.");
+            }
+
+            if (deviceCode.ExpiresIn <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"GitHub device-code request returned a 200 response with a non-positive expires_in ({deviceCode.ExpiresIn}).");
+            }
+        }
 
         private static string FormatErrorDescription(string? description)
             => string.IsNullOrWhiteSpace(description) ? string.Empty : $" — {description}";

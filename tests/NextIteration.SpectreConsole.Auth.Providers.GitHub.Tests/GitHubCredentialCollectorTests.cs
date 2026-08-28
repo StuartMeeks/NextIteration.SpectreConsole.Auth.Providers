@@ -150,6 +150,41 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             Assert.Contains("device-code request failed", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        [InlineData("""{ "device_code": null, "user_code": "WXYZ", "verification_uri": "https://x/", "expires_in": 900, "interval": 5 }""", "device_code")]
+        [InlineData("""{ "device_code": "", "user_code": "WXYZ", "verification_uri": "https://x/", "expires_in": 900, "interval": 5 }""", "device_code")]
+        [InlineData("""{ "device_code": "dc", "user_code": null, "verification_uri": "https://x/", "expires_in": 900, "interval": 5 }""", "user_code")]
+        [InlineData("""{ "device_code": "dc", "user_code": "WXYZ", "verification_uri": null, "expires_in": 900, "interval": 5 }""", "verification_uri")]
+        [InlineData("""{ "device_code": "dc", "user_code": "WXYZ", "verification_uri": "https://x/", "expires_in": 0, "interval": 5 }""", "expires_in")]
+        public async Task RequestDeviceCodeAsync_When200BodyIsUnusable_Throws(string body, string expectedField)
+        {
+            // `required` only pins presence, not non-nullness, so each of these
+            // deserializes cleanly. Unguarded, a null device_code surfaces as a
+            // GitHub error during polling that names nothing actionable, and a
+            // null user_code/verification_uri renders an empty instruction panel.
+            var stub = StubHttpClientFactory.ReturningJson(body);
+            var collector = Collector(stub, out _);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.RequestDeviceCodeAsync(new Uri("https://github.com/"), "id", "repo"));
+
+            Assert.Contains(expectedField, ex.Message, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("""{ "login": null, "id": 1 }""")]
+        [InlineData("""{ "login": "", "id": 1 }""")]
+        public async Task LookupUserAsync_When200BodyHasNoLogin_Throws(string body)
+        {
+            var stub = StubHttpClientFactory.ReturningJson(body);
+            var collector = Collector(stub, out _);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupUserAsync(new Uri("https://api.github.com/"), "gho_x"));
+
+            Assert.Contains("login", ex.Message, StringComparison.Ordinal);
+        }
+
         [Fact]
         public async Task PollForTokenAsync_ContinuesOnPending_ThenReturnsToken()
         {

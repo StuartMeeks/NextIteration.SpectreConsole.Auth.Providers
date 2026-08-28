@@ -62,6 +62,20 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **All providers: a 200 response whose fields are JSON `null` is now rejected at the
+  point it arrives.** The wire DTOs use `required`, which System.Text.Json satisfies by a
+  property being *present* — not by its value being non-null — and
+  `RespectNullableAnnotations` is not enabled, so
+  `{"access_token":null,"token_type":null,"expires_in":3600}` deserialized cleanly into an
+  `AdobeTokenDto` whose non-nullable strings were null. The `?? throw` guards only ever
+  fired for a body that is the literal `null`. The Adobe case was the worst, because it
+  failed silently and far from its cause: `AdobeToken.IsExpired` reported `false` for the
+  token's whole lifetime while `GetAuthorizationHeader` produced `" "`, so every call 401'd
+  and the retry-on-expiry path never re-authenticated. Also guarded: GitHub's device-code
+  fields and `expires_in`, GitHub's user `login`, SoftwareOne's `data` array and the
+  matching token record's `account` object — the last two turned into
+  `NullReferenceException` mid-flow rather than a message a user could act on.
+
 - **SoftwareOne: error-body redaction now covers the percent-encoded token.**
   `SanitiseErrorBody` replaced only the literal token value, but the request URL carries
   `Uri.EscapeDataString(apiToken)` — and an upstream proxy echoing that URL back into an

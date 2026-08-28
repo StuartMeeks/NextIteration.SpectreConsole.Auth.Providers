@@ -162,6 +162,17 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                 ?? throw new InvalidOperationException(
                     "SoftwareOne token lookup returned a success status with a body that did not deserialize to a search result.");
 
+            // `required` is satisfied by a property being *present* in the JSON,
+            // not by its value being non-null, and RespectNullableAnnotations is
+            // not enabled — so {"data":null} deserializes cleanly and the Count
+            // below would be a NullReferenceException rather than a message the
+            // user can act on.
+            if (result.Data is null)
+            {
+                throw new InvalidOperationException(
+                    "SoftwareOne token lookup returned a 200 response whose data array was null.");
+            }
+
             if (result.Data.Count == 0)
             {
                 throw new InvalidOperationException(
@@ -174,7 +185,19 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                     $"SoftwareOne token lookup returned {result.Data.Count} matches for what should be a unique token value. The Marketplace API response is ambiguous; aborting rather than guessing.");
             }
 
-            return result.Data[0];
+            var match = result.Data[0];
+
+            // Same `required`-is-only-presence caveat: a record whose account
+            // object is JSON null would reach the collector and throw a
+            // NullReferenceException on tokenDto.Account.Id, mid-way through
+            // building the credential.
+            if (match is null || match.Account is null)
+            {
+                throw new InvalidOperationException(
+                    "SoftwareOne token lookup returned a 200 response whose matching token record was incomplete.");
+            }
+
+            return match;
         }
 
         /// <summary>

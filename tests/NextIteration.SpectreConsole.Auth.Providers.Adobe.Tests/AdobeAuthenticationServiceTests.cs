@@ -188,6 +188,34 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             Assert.Contains("client_id=abc-api-key", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        // `required` is satisfied by a property being *present*, not non-null,
+        // and RespectNullableAnnotations is off — so every one of these
+        // deserializes cleanly into an AdobeTokenDto today.
+        [InlineData("""{ "access_token": null, "token_type": "bearer", "expires_in": 3600 }""", "access_token")]
+        [InlineData("""{ "access_token": "", "token_type": "bearer", "expires_in": 3600 }""", "access_token")]
+        [InlineData("""{ "access_token": "   ", "token_type": "bearer", "expires_in": 3600 }""", "access_token")]
+        [InlineData("""{ "access_token": "tok", "token_type": null, "expires_in": 3600 }""", "token_type")]
+        [InlineData("""{ "access_token": "tok", "token_type": "", "expires_in": 3600 }""", "token_type")]
+        [InlineData("""{ "access_token": "tok", "token_type": "bearer", "expires_in": 0 }""", "expires_in")]
+        [InlineData("""{ "access_token": "tok", "token_type": "bearer", "expires_in": -5 }""", "expires_in")]
+        public async Task AuthenticateAsync_WhenImsReturns200WithUnusableTokenFields_Throws(
+            string body, string expectedField)
+        {
+            // Without the guard this is the worst kind of bug: the failure is
+            // silent and lands far from its cause. AdobeToken.IsExpired reports
+            // false for the token's whole lifetime while GetAuthorizationHeader
+            // produces " ", so every downstream call 401s and the retry-on-expiry
+            // path never re-authenticates.
+            var http = StubHttpClientFactory.ReturningJson(body);
+            var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => service.AuthenticateAsync(NewCredential()));
+
+            Assert.Contains(expectedField, ex.Message, StringComparison.Ordinal);
+        }
+
         [Fact]
         public void SanitiseErrorBody_RedactsAllThreeSpellingsOfTheSecret()
         {
