@@ -18,5 +18,23 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             Assert.Equal(SoftwareOneCredential.ProviderName, collector.ProviderName);
             Assert.Equal("SoftwareOne", collector.ProviderName);
         }
+
+        [Fact]
+        public async Task CollectAsync_HonoursAlreadyCancelledToken()
+        {
+            // Every AnsiConsole.PromptAsync call in CollectAsync must receive
+            // the token, or a host cancelling `accounts add` is ignored until
+            // the *next* prompt runs — the user stays stuck on a blocking
+            // stdin read. An already-cancelled token faults at the first
+            // prompt (the API-token prompt, which was one of the six sites missing the token), so this pins
+            // the entry point without needing a Spectre test console.
+            var collector = new SoftwareOneCredentialCollector(StubHttpClientFactory.ReturningJson("{}"));
+            using var cts = new CancellationTokenSource();
+            await cts.CancelAsync();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => collector.CollectAsync(cts.Token));
+        }
+
     }
 }
