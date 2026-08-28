@@ -62,6 +62,16 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **GitHub: the server-supplied device-flow poll interval is clamped at both ends.** It was
+  floored at 1 second (`Math.Max(deviceCode.Interval, 1)`) with no ceiling, and the
+  `slow_down` back-off grew it without bound. A misconfigured or hostile GHES returning
+  `"interval": 9999999` stalled `accounts add` indefinitely; past ~4.29e9 seconds
+  `Task.Delay` throws `ArgumentOutOfRangeException` from inside the first `await`, where
+  the `expires_in` deadline check cannot intervene, so the command died naming a `delay`
+  parameter with nothing tying it to the server response. Now clamped to 1–60 seconds —
+  an interval above a minute is meaningless against a code that expires in fifteen — and
+  the `slow_down` back-off respects the same ceiling.
+
 - **All providers: a malformed response or stored credential no longer escapes as a raw
   `JsonException`.** The `?? throw new InvalidOperationException("…did not deserialize")`
   guards only fired for a body that is the literal `null`; anything merely malformed — a
