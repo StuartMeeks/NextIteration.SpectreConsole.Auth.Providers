@@ -89,6 +89,38 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
         }
 
         [Fact]
+        public async Task AuthenticateAsync_Refresh_DiscardsTheRotatedRefreshToken()
+        {
+            // Pins the documented limitation rather than implying coverage that
+            // does not exist. The happy-path test above stubs
+            // "refresh_token": "ghr_new" and asserts nothing about it, which
+            // reads as if rotation were handled.
+            //
+            // GitHub rotates the refresh token on use: the response carries a
+            // new one and the token just used stops working. GitHubToken has no
+            // member to carry it and nothing is written back to the store, so
+            // the stored refresh token is spent after this first refresh. If a
+            // future core release adds an update API to ICredentialManager,
+            // this test is the one that should change.
+            var stub = StubHttpClientFactory.ReturningJson(
+                """{ "access_token": "gho_fresh", "token_type": "bearer", "expires_in": 28800, "refresh_token": "ghr_rotated" }""");
+            var svc = Service(stub);
+            var credential = Credential(expiresAt: Now - TimeSpan.FromMinutes(1), refreshToken: "ghr_old");
+
+            var token = await svc.AuthenticateAsync(credential);
+
+            Assert.Equal("gho_fresh", token.AccessToken);
+            // The rotated token is nowhere in the result, and the credential we
+            // passed in is unchanged — so a second expiry will present the spent
+            // "ghr_old" and be rejected.
+            Assert.Equal("ghr_old", credential.RefreshToken);
+            Assert.DoesNotContain(
+                "ghr_rotated",
+                JsonSerializer.Serialize(credential, GitHubCredential.JsonOptions),
+                StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task AuthenticateAsync_WhenRefreshReturnsNonSuccess_RedactsTheStoredRefreshToken()
         {
             // The only refresh-failure test stubbed a *200* carrying an error

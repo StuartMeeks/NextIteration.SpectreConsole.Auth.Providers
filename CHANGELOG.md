@@ -31,6 +31,19 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- **GitHub: the refresh-token limitation now states its consequence, not just its
+  mechanism.** That a refreshed access token is not written back to the keystore was
+  already documented; what was not is that GitHub *rotates* the refresh token — the
+  response carries a new one and the token just used stops working. Because nothing is
+  persisted, the stored refresh token is spent after the **first** refresh, so the
+  existing promise that "each authenticate call that needs a refresh performs one" holds
+  only for that one. The next expiry surfaces as *"GitHub token refresh was rejected …
+  run `accounts add` again"*, and re-adding the account is the remedy. Applies only to
+  OAuth Apps issuing expiring tokens. The happy-path test stubbed
+  `"refresh_token": "ghr_new"` and asserted nothing about it, reading as if rotation were
+  handled; a new test pins the discard explicitly.
+
+
 - **The core dependency's documented range was a full major behind the actual one, in six
   places.** `Directory.Packages.props` declares `[2.0.0,3.0.0)`, but the comment directly
   above it still explained the 1.x cap and said "Floored at 1.0.1", and a second comment

@@ -15,11 +15,27 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
     /// before the token is returned.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The refreshed access token is <b>not</b> written back to the credential
     /// store in this version — each authenticate call that needs a refresh
     /// performs one. Consumers that authenticate frequently against an expiring
     /// app should cache the returned <see cref="GitHubToken"/> for its lifetime.
+    /// Persisting it would need an update API on the core credential store.
+    /// </para>
+    /// <para>
+    /// <b>Consequence:</b> GitHub <i>rotates</i> the refresh token — the token
+    /// response carries a new <c>refresh_token</c> and the one just used stops
+    /// working. Since nothing is persisted, the stored refresh token is spent
+    /// after the first refresh, and "each authenticate call that needs a refresh
+    /// performs one" holds only for that first one. The next expiry surfaces as
+    /// <i>"GitHub token refresh was rejected … run `accounts add` again"</i>,
+    /// which is the actual remedy: re-add the account. This affects only OAuth
+    /// Apps configured to issue expiring tokens; with non-expiring tokens there
+    /// is no refresh token and no refresh.
+    /// </para>
+    /// <para>
     /// Consumers must register <c>IHttpClientFactory</c> (<c>services.AddHttpClient()</c>).
+    /// </para>
     /// </remarks>
     public sealed class GitHubAuthenticationService : IAuthenticationService<GitHubCredential, GitHubToken>
     {
