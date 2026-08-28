@@ -127,6 +127,12 @@ Each `accounts add` run serialises a `GitHubCredential` into the encrypted keyst
 
 A refreshed access token is **not** written back to the keystore in this version — each authenticate call that needs a refresh performs one. Consumers that authenticate frequently against an expiring app should cache the returned `GitHubToken` for its lifetime. (Persisting the refreshed token would require an update API on the core credential store.)
 
+**What that means in practice:** GitHub *rotates* the refresh token — the response carries a new `refresh_token` and the one just used stops working. Because nothing is persisted, the stored refresh token is spent after the **first** refresh. The next time the access token expires you get:
+
+> GitHub token refresh was rejected: … The refresh token may be expired — run `accounts add` again.
+
+and re-adding the account is the remedy. This applies only to OAuth Apps configured to issue **expiring** tokens; with non-expiring tokens there is no refresh token and no refresh.
+
 ---
 
 ## GitHub Enterprise Server
