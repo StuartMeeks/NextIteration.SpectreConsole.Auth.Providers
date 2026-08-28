@@ -25,7 +25,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
                     .Secret()
                     .Validate(value => string.IsNullOrWhiteSpace(value)
                         ? ValidationResult.Error("Access token cannot be empty")
-                        : ValidationResult.Success())).ConfigureAwait(false);
+                        : ValidationResult.Success()), cancellationToken).ConfigureAwait(false);
 
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()

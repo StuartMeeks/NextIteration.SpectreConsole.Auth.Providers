@@ -93,12 +93,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                 new TextPrompt<string>("Enter OAuth App client id:")
                     .Validate(value => string.IsNullOrWhiteSpace(value)
                         ? ValidationResult.Error("Client id cannot be empty")
-                        : ValidationResult.Success())).ConfigureAwait(false);
+                        : ValidationResult.Success()), cancellationToken).ConfigureAwait(false);
 
             var scopes = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter scopes (space-separated):")
                     .DefaultValue(DefaultScopes)
-                    .AllowEmpty()).ConfigureAwait(false);
+                    .AllowEmpty(), cancellationToken).ConfigureAwait(false);
 
             var webBaseUrl = DeriveWebBaseUrl(host);
             var apiBaseUrl = DeriveApiBaseUrl(host);

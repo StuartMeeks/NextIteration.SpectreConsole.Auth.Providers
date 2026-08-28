@@ -29,6 +29,17 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **All four collectors: every `accounts add` prompt now honours the cancellation token.**
+  Six of the fourteen `AnsiConsole.PromptAsync` calls dropped it — Adobe's API-key and
+  client-secret prompts, Airtable's access-token prompt, SoftwareOne's API-token prompt,
+  and GitHub's client-id and scopes prompts. Adjacent prompts in the same method disagreed,
+  and the split tracked code shape (an inline `.Validate(…)` lambda as the last chained
+  member) rather than intent, which marks it as a mechanical edit that missed those sites.
+  A host cancelling while the user sat at one of them was ignored: that prompt kept
+  blocking on stdin and only the *next* prompt observed the cancellation. The 2.0.0 entry
+  below claims the token was threaded "into … the Spectre prompts each collector runs";
+  this makes that true.
+
 - **GitHub: the host prompt now rejects anything that is not a bare `host[:port]`.**
   `ValidateHost` only checked `Uri.TryCreate($"https://{host}/")`, which parses almost
   any string, so its own error message ("Must be a bare host…") enforced nothing. A value

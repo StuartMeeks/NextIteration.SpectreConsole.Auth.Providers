@@ -35,12 +35,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
 
             var apiKey = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter API Key (OAuth2 client_id):")
-                    .Validate(ValidateNonEmpty("API Key"))).ConfigureAwait(false);
+                    .Validate(ValidateNonEmpty("API Key")), cancellationToken).ConfigureAwait(false);
 
             var clientSecret = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Client Secret:")
                     .Secret()
-                    .Validate(ValidateNonEmpty("Client Secret"))).ConfigureAwait(false);
+                    .Validate(ValidateNonEmpty("Client Secret")), cancellationToken).ConfigureAwait(false);
 
             var baseUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Base URL:")

@@ -309,5 +309,23 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             ExpiresIn = expiresIn,
             Interval = interval,
         };
+
+        [Fact]
+        public async Task CollectAsync_HonoursAlreadyCancelledToken()
+        {
+            // Every AnsiConsole.PromptAsync call in CollectAsync must receive
+            // the token, or a host cancelling `accounts add` is ignored until
+            // the *next* prompt runs — the user stays stuck on a blocking
+            // stdin read. An already-cancelled token faults at the first
+            // prompt (the host prompt), so this pins
+            // the entry point without needing a Spectre test console.
+            var collector = new GitHubCredentialCollector(StubHttpClientFactory.ReturningJson("{}"));
+            using var cts = new CancellationTokenSource();
+            await cts.CancelAsync();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => collector.CollectAsync(cts.Token));
+        }
+
     }
 }

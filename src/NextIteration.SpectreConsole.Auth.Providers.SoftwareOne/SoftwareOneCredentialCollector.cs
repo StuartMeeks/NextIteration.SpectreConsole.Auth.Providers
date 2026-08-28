@@ -80,7 +80,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                     .Secret()
                     .Validate(value => string.IsNullOrWhiteSpace(value)
                         ? ValidationResult.Error("API token cannot be empty")
-                        : ValidationResult.Success())).ConfigureAwait(false);
+                        : ValidationResult.Success()), cancellationToken).ConfigureAwait(false);
 
             var baseUrlInput = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Base URL:")
