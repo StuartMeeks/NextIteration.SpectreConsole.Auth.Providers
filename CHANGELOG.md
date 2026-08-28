@@ -29,6 +29,16 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **Adobe: the client secret is now redacted from IMS error bodies.** Adobe is the only
+  one of the four providers that posts a true `client_secret`, and its error path only
+  *truncated* the response body — the comment claimed truncation "bounds the unlikely case
+  of credential material making it back into the error body", but an echoed
+  `client_secret=` sits well inside the 512 characters kept. A TLS-terminating proxy
+  returning a debug page that echoes the posted form put the secret verbatim into the
+  `HttpRequestException` message. Both sibling packages already had a redacting helper;
+  Adobe now has `SanitiseErrorBody`, which redacts the raw, percent-encoded and
+  form-encoded spellings (longest first) before truncating.
+
 - **SoftwareOne: the API token no longer reaches consumer logs via the request URL.**
   The Marketplace token lookup passes the token in an `eq(token,'…')` query filter, and
   `AddSoftwareOneAuthProvider` never registered the collector's named client — so it got

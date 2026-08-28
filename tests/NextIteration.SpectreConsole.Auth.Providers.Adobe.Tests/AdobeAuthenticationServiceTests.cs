@@ -154,6 +154,61 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             Assert.Contains("BadRequest", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        // A secret needing no escaping — all three redacted forms coincide.
+        [InlineData("super-secret")]
+        // Adobe IMS client secrets are base64-ish and commonly carry these, so
+        // the encoded spellings are the norm rather than the edge case.
+        [InlineData("p8e-AbC+dEf/123=")]
+        [InlineData("s3cr3t/with+slashes=")]
+        [InlineData("secret with spaces")]
+        public async Task AuthenticateAsync_WhenImsEchoesThePostedForm_RedactsTheClientSecret(string secret)
+        {
+            // Adobe is the only one of the four providers that posts a true
+            // client secret. A TLS-terminating proxy returning a debug page that
+            // echoes the posted form hands it straight back, and truncation
+            // alone kept it — client_secret= sits well inside the first 512
+            // characters.
+            var percentEncoded = Uri.EscapeDataString(secret);
+            var formEncoded = percentEncoded.Replace("%20", "+", StringComparison.Ordinal);
+            var body = $"echo: client_id=abc-api-key&client_secret={formEncoded} (raw={secret}, pct={percentEncoded})";
+
+            var http = StubHttpClientFactory.ReturningJson(body, HttpStatusCode.BadRequest);
+            var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+
+            var ex = await Assert.ThrowsAsync<HttpRequestException>(
+                () => service.AuthenticateAsync(NewCredential(clientSecret: secret)));
+
+            Assert.DoesNotContain(secret, ex.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain(percentEncoded, ex.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain(formEncoded, ex.Message, StringComparison.Ordinal);
+            Assert.Contains("<redacted>", ex.Message, StringComparison.Ordinal);
+            // Non-credential diagnostics survive — sanitisation must not blind
+            // the operator to what actually failed.
+            Assert.Contains("client_id=abc-api-key", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void SanitiseErrorBody_RedactsAllThreeSpellingsOfTheSecret()
+        {
+            const string secret = "p8e-AbC+dEf/123=";
+            var percentEncoded = Uri.EscapeDataString(secret);
+            var formEncoded = percentEncoded.Replace("%20", "+", StringComparison.Ordinal);
+
+            var sanitised = AdobeAuthenticationService.SanitiseErrorBody(
+                $"{secret}|{percentEncoded}|{formEncoded}", secret);
+
+            Assert.Equal("<redacted>|<redacted>|<redacted>", sanitised);
+        }
+
+        [Fact]
+        public void SanitiseErrorBody_EmptySecret_StillTruncates()
+        {
+            var sanitised = AdobeAuthenticationService.SanitiseErrorBody(new string('x', 4000), string.Empty);
+
+            Assert.Contains("[truncated]", sanitised, StringComparison.Ordinal);
+        }
+
         [Fact]
         public async Task AuthenticateAsync_WhenImsReturnsLargeErrorBody_TruncatesItInException()
         {
@@ -302,11 +357,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
                 () => service.ValidateTokenAsync(null!));
         }
 
-        private static AdobeCredential NewCredential() => new()
+        private static AdobeCredential NewCredential(string clientSecret = "super-secret") => new()
         {
             ImsUrl = new Uri("https://ims-na1.adobelogin.com/"),
             ApiKey = "abc-api-key",
-            ClientSecret = "super-secret",
+            ClientSecret = clientSecret,
             BaseUrl = new Uri("https://partners.adobe.io/"),
             Environment = "Production",
         };
