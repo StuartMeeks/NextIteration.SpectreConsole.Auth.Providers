@@ -30,7 +30,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             """);
             var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
 
-            _ = await service.AuthenticateAsync(NewCredential());
+            await service.AuthenticateAsync(NewCredential());
 
             Assert.NotNull(http.LastRequest);
             Assert.Equal(HttpMethod.Post, http.LastRequest!.Method);
@@ -47,7 +47,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             """);
             var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
 
-            _ = await service.AuthenticateAsync(NewCredential());
+            await service.AuthenticateAsync(NewCredential());
 
             Assert.NotNull(http.LastRequestBody);
             Assert.Contains("grant_type=client_credentials", http.LastRequestBody!, StringComparison.Ordinal);
