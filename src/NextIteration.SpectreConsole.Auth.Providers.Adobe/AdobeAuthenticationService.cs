@@ -88,7 +88,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             // client.BaseAddress — a named HttpClient may be shared across
             // callers via IHttpClientFactory's handler pool, and mutating
             // state on it is a concurrency footgun.
-            var tokenEndpoint = new Uri(credential.ImsUrl, TokenEndpointPath);
+            var tokenEndpoint = new Uri(EnsureTrailingSlash(credential.ImsUrl), TokenEndpointPath);
 
             // FormUrlEncodedContent is IDisposable — dispose it to release
             // the underlying byte buffer promptly.
@@ -329,6 +329,29 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             }
 
             return value ?? throw new InvalidOperationException(failureMessage);
+        }
+
+        /// <summary>
+        /// Returns <paramref name="baseUrl"/> guaranteed to end in <c>/</c>.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Uri"/>'s relative-resolution rules replace the base's last
+        /// path segment unless the base ends in a slash, so
+        /// <c>https://gw.corp/adobe-ims</c> combined with <c>ims/token/v3</c>
+        /// silently yields <c>https://gw.corp/ims/token/v3</c> — the gateway
+        /// prefix is dropped and the request fails somewhere the user cannot
+        /// see, with an error that points at their credentials rather than at
+        /// the mangled URL. Normalising at the point of combination also fixes
+        /// credentials already stored without the trailing slash.
+        /// </remarks>
+        internal static Uri EnsureTrailingSlash(Uri baseUrl)
+        {
+            if (baseUrl.AbsolutePath.EndsWith('/'))
+            {
+                return baseUrl;
+            }
+
+            return new UriBuilder(baseUrl) { Path = baseUrl.AbsolutePath + "/" }.Uri;
         }
 
     }

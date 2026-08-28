@@ -17,7 +17,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
         private static GitHubCredential Credential(
             DateTimeOffset? expiresAt = null,
             string? refreshToken = null,
-            string accessToken = "gho_stored")
+            string accessToken = "gho_stored",
+            string webBaseUrl = "https://github.com/")
             => new()
             {
                 ClientId = "Iv1.id",
@@ -25,7 +26,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
                 RefreshToken = refreshToken,
                 AccessTokenExpiresAt = expiresAt,
                 Scopes = "repo",
-                WebBaseUrl = new Uri("https://github.com/"),
+                WebBaseUrl = new Uri(webBaseUrl, UriKind.Absolute),
                 ApiBaseUrl = new Uri("https://api.github.com/"),
                 Login = "octocat",
                 Environment = "GitHubCom",
@@ -119,6 +120,25 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
                 () => svc.AuthenticateAsync(Credential(expiresAt: Now - TimeSpan.FromMinutes(1), refreshToken: "ghr_old")));
 
             Assert.Contains("did not deserialize", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("https://ghe.example.com/", "https://ghe.example.com/login/oauth/access_token")]
+        [InlineData("https://ghe.example.com", "https://ghe.example.com/login/oauth/access_token")]
+        // DeriveWebBaseUrl always produces a trailing slash, so this is defence
+        // for a credential written by an older version or edited by hand.
+        [InlineData("https://gw.corp/ghe", "https://gw.corp/ghe/login/oauth/access_token")]
+        public async Task AuthenticateAsync_Refresh_PreservesThePathOfTheWebBaseUrl(string webBaseUrl, string expected)
+        {
+            var stub = StubHttpClientFactory.ReturningJson(
+                """{ "access_token": "gho_fresh", "token_type": "bearer", "expires_in": 28800 }""");
+            var svc = Service(stub);
+            await svc.AuthenticateAsync(Credential(
+                expiresAt: Now - TimeSpan.FromMinutes(1),
+                refreshToken: "ghr_old",
+                webBaseUrl: webBaseUrl));
+
+            Assert.Equal(new Uri(expected), stub.LastRequest!.RequestUri);
         }
 
         [Fact]

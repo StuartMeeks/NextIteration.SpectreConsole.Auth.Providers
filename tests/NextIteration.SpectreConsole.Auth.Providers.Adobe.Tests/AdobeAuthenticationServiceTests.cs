@@ -231,6 +231,37 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             Assert.Contains("did not deserialize", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        // A base with no path: unaffected either way.
+        [InlineData("https://ims-na1.adobelogin.com/", "https://ims-na1.adobelogin.com/ims/token/v3")]
+        [InlineData("https://ims-na1.adobelogin.com", "https://ims-na1.adobelogin.com/ims/token/v3")]
+        // A path-based gateway: Uri's relative resolution replaces the base's
+        // last segment unless it ends in a slash, so without normalisation
+        // "https://gw.corp/adobe-ims" silently became
+        // "https://gw.corp/ims/token/v3" — the gateway prefix dropped.
+        [InlineData("https://gw.corp/adobe-ims", "https://gw.corp/adobe-ims/ims/token/v3")]
+        [InlineData("https://gw.corp/adobe-ims/", "https://gw.corp/adobe-ims/ims/token/v3")]
+        [InlineData("https://gw.corp/a/b/c", "https://gw.corp/a/b/c/ims/token/v3")]
+        public async Task AuthenticateAsync_PreservesThePathOfAPathBasedImsUrl(string imsUrl, string expected)
+        {
+            var http = StubHttpClientFactory.ReturningJson("""
+            { "access_token": "at", "token_type": "bearer", "expires_in": 86400 }
+            """);
+            var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+            var credential = new AdobeCredential
+            {
+                ImsUrl = new Uri(imsUrl, UriKind.Absolute),
+                ApiKey = "abc-api-key",
+                ClientSecret = "super-secret",
+                BaseUrl = new Uri("https://partners.adobe.io/"),
+                Environment = "Production",
+            };
+
+            await service.AuthenticateAsync(credential);
+
+            Assert.Equal(new Uri(expected), http.LastRequest!.RequestUri);
+        }
+
         [Fact]
         public void SanitiseErrorBody_RedactsAllThreeSpellingsOfTheSecret()
         {

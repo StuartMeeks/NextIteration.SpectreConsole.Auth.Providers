@@ -135,6 +135,29 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             Assert.Contains("incomplete", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        [InlineData("https://api.softwareone.com/", "https://api.softwareone.com/v1/accounts/api-tokens")]
+        [InlineData("https://api.softwareone.com", "https://api.softwareone.com/v1/accounts/api-tokens")]
+        // Without normalisation a path-based gateway lost its prefix and the
+        // user got a 404 or a "token not found" message pointing at their token
+        // rather than at the mangled URL.
+        [InlineData("https://gateway.corp.example/softwareone", "https://gateway.corp.example/softwareone/v1/accounts/api-tokens")]
+        [InlineData("https://gateway.corp.example/softwareone/", "https://gateway.corp.example/softwareone/v1/accounts/api-tokens")]
+        public async Task LookupTokenAsync_PreservesThePathOfAPathBasedBaseUrl(string baseUrl, string expectedPathPrefix)
+        {
+            var http = StubHttpClientFactory.ReturningJson("""
+            { "data": [ { "id": "T", "name": "n", "account": { "id": "A", "name": "a", "type": "t" } } ] }
+            """);
+            var collector = new SoftwareOneCredentialCollector(http);
+
+            await collector.LookupTokenAsync(new Uri(baseUrl, UriKind.Absolute), "abc-123");
+
+            Assert.StartsWith(
+                expectedPathPrefix,
+                http.LastRequest!.RequestUri!.AbsoluteUri,
+                StringComparison.Ordinal);
+        }
+
         [Fact]
         public async Task LookupTokenAsync_HttpError_Throws_WithBodyInMessage()
         {

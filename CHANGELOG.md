@@ -99,6 +99,17 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Adobe, SoftwareOne and GitHub: a path-based base URL no longer loses its path.**
+  `new Uri(base, "relative")` replaces the base's last path segment unless the base ends
+  in `/`, so a user behind a path-based gateway entering
+  `https://gateway.corp.example/softwareone` had the request go to
+  `/v1/accounts/api-tokens` — the gateway prefix silently dropped. They then got a 404 or
+  a "token not found" message pointing at their token rather than at the mangled URL.
+  Neither `ValidateSecureUrl` nor `ValidateSecureBaseUrl` required or added a trailing
+  slash, and both package READMEs documented the behaviour as plain concatenation.
+  Normalising at the point of combination rather than at collection time also repairs
+  credentials already stored without the slash.
+
 - **Adobe: `AdobeToken.IsExpired` no longer compares a Kind-agnostic `DateTime` against
   `DateTime.UtcNow`.** `CreatedAt` is a public `init` property documented as UTC, but
   nothing enforced that, and `DateTime.Now` is the obvious mistake for a consumer
