@@ -11,6 +11,17 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **GitHub: `accounts add` is cancellable again during the device-flow poll.**
+  `GitHubCredentialCollector.CollectAsync` passed `CancellationToken.None` into
+  `PollForTokenAsync` while forwarding its real token to every neighbouring call. The
+  poll loop is fully cancellation-aware — it threads the token into both the interval
+  delay and the token POST — so the literal `None` neutered all of it. A host cancelling
+  `accounts add` after the device panel rendered was ignored: the loop kept POSTing
+  GitHub's token endpoint every 5s until `expires_in` elapsed (900s on github.com),
+  leaving the CLI apparently hung for up to 15 minutes.
+
 ---
 
 ## [2.0.0 / 2.0.0 / 2.0.0 / 2.0.0] — 2026-08-28

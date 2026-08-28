@@ -115,7 +115,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                 .BorderColor(Color.Grey));
 
             // 3. Poll until the user authorises (or the code expires).
-            var tokenDto = await PollForTokenAsync(webBaseUrl, clientId, deviceCode, CancellationToken.None).ConfigureAwait(false);
+            var tokenDto = await PollForTokenAsync(webBaseUrl, clientId, deviceCode, cancellationToken).ConfigureAwait(false);
 
             // 4. Enrich with the authenticated user's identity.
             var accessToken = tokenDto.AccessToken!;
