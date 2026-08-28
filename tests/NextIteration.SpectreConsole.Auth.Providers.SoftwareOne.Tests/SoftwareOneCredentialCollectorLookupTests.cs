@@ -108,6 +108,34 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
         }
 
         [Fact]
+        public async Task LookupTokenAsync_When200DataArrayIsNull_ThrowsInsteadOfNullReference()
+        {
+            // `required` only pins presence, so {"data":null} deserializes
+            // cleanly; result.Data.Count would then be a NullReferenceException
+            // rather than something the user can act on.
+            var http = StubHttpClientFactory.ReturningJson("""{ "data": null }""");
+            var collector = new SoftwareOneCredentialCollector(http);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+
+            Assert.Contains("data array was null", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task LookupTokenAsync_When200MatchHasNullAccount_ThrowsInsteadOfNullReference()
+        {
+            var http = StubHttpClientFactory.ReturningJson(
+                """{ "data": [ { "id": "TKN-1", "name": "n", "account": null } ] }""");
+            var collector = new SoftwareOneCredentialCollector(http);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+
+            Assert.Contains("incomplete", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task LookupTokenAsync_HttpError_Throws_WithBodyInMessage()
         {
             var http = StubHttpClientFactory.ReturningJson(

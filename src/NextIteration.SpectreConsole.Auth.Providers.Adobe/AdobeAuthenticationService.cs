@@ -117,6 +117,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             var dto = JsonSerializer.Deserialize<AdobeTokenDto>(responseBody)
                 ?? throw new InvalidOperationException("Adobe IMS returned a 200 response with a body that did not deserialize to AdobeTokenDto.");
 
+            ValidateTokenResponse(dto);
+
             return new AdobeToken
             {
                 AccessToken = dto.AccessToken,
@@ -210,6 +212,43 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         /// longest first, so a shorter form cannot partially rewrite a longer
         /// one and leave the remainder unmatched.
         /// </remarks>
+        /// <summary>
+        /// Rejects a 200 whose token fields are absent in substance rather than
+        /// in shape.
+        /// </summary>
+        /// <remarks>
+        /// <c>required</c> is satisfied by a property being <em>present</em> in
+        /// the JSON, not by its value being non-null, and
+        /// <c>RespectNullableAnnotations</c> is not enabled — so
+        /// <c>{"access_token":null,"token_type":null,"expires_in":3600}</c>
+        /// deserializes cleanly into an <see cref="AdobeTokenDto"/> whose
+        /// non-nullable strings are null. Without this guard the failure only
+        /// shows up much later and far from its cause: the token reports
+        /// <see cref="AdobeToken.IsExpired"/> false for its whole lifetime while
+        /// <see cref="AdobeToken.GetAuthorizationHeader"/> produces <c>" "</c>,
+        /// so every call 401s and nothing ever re-authenticates.
+        /// </remarks>
+        private static void ValidateTokenResponse(AdobeTokenDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.AccessToken))
+            {
+                throw new InvalidOperationException(
+                    "Adobe IMS returned a 200 response with no usable access_token value.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.TokenType))
+            {
+                throw new InvalidOperationException(
+                    "Adobe IMS returned a 200 response with no usable token_type value.");
+            }
+
+            if (dto.ExpiresIn <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"Adobe IMS returned a 200 response with a non-positive expires_in ({dto.ExpiresIn}).");
+            }
+        }
+
         internal static string SanitiseErrorBody(string body, string clientSecret)
         {
             if (string.IsNullOrEmpty(body))
