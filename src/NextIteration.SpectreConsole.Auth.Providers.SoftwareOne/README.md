@@ -115,6 +115,17 @@ services.AddHttpClient(SoftwareOneCredentialCollector.HttpClientName, c =>
 });
 ```
 
+`AddSoftwareOneAuthProvider()` registers that named client itself, with
+`IHttpClientFactory`'s **default logging suppressed** (`RemoveAllLoggers()`).
+That matters because the lookup passes the token in the query string, and
+`Microsoft.Extensions.Http` 8.x logs the full request URI at `Information`
+level — so without the suppression any consumer with an information-level
+logger would write the plaintext, long-lived token to its log on every
+`accounts add`. (10.x redacts the query, so this is reachable specifically for
+consumers on the net8.0 floor.) Pre-configuring the client as above adds to the
+same registration and keeps the suppression; it does not affect logging for any
+other `HttpClient` in your application.
+
 ---
 
 ## Supported platforms

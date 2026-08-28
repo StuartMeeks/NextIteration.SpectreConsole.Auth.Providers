@@ -41,22 +41,21 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
         }
 
         [Fact]
-        public void AddSoftwareOneAuthProvider_RequiresAddHttpClient_ToResolveTheCollector()
+        public void AddSoftwareOneAuthProvider_RegistersItsOwnNamedClient_SoTheCollectorResolvesUnaided()
         {
-            // Pins the prerequisite the package README's quick start has to
-            // state. The collector takes IHttpClientFactory as its only
-            // constructor dependency (for the add-time token lookup), so a
-            // consumer who omits AddHttpClient builds and starts cleanly and
-            // then fails the first time the user runs `accounts add` — not at
-            // container-build time, which is why a smoke test misses it.
+            // Registering the named client inside AddSoftwareOneAuthProvider is
+            // what makes the log suppression reliable (see
+            // SoftwareOneHttpLoggingTests). It also removes the footgun where a
+            // consumer omitting AddHttpClient() built and started cleanly, then
+            // failed the first time the user ran `accounts add` — at
+            // command-invocation time, which a startup smoke test misses.
             var services = new ServiceCollection();
 
             services.AddSoftwareOneAuthProvider();
 
             using var sp = services.BuildServiceProvider();
-            var ex = Assert.Throws<InvalidOperationException>(
-                () => sp.GetServices<ICredentialCollector>().ToList());
-            Assert.Contains("IHttpClientFactory", ex.Message, StringComparison.Ordinal);
+            var collector = Assert.Single(sp.GetServices<ICredentialCollector>());
+            Assert.IsType<SoftwareOneCredentialCollector>(collector);
         }
 
         [Fact]
