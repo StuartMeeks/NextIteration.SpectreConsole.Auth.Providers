@@ -29,6 +29,16 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **SoftwareOne: error-body redaction now covers the percent-encoded token.**
+  `SanitiseErrorBody` replaced only the literal token value, but the request URL carries
+  `Uri.EscapeDataString(apiToken)` — and an upstream proxy echoing that URL back into an
+  error page is the exact threat the sanitiser's own comment names. Only tokens made
+  purely of unreserved characters were actually redacted; a realistic Marketplace token
+  (`idt:AbC+dEf/123=` → `idt%3AAbC%2BdEf%2F123%3D`) survived intact into the
+  `InvalidOperationException` message that `accounts add` prints and log aggregators
+  capture. The existing regression test used `tok-secret-12345`, which escapes to itself,
+  so the suite was green on a case it did not cover.
+
 - **All four collectors: every `accounts add` prompt now honours the cancellation token.**
   Six of the fourteen `AnsiConsole.PromptAsync` calls dropped it — Adobe's API-key and
   client-secret prompts, Airtable's access-token prompt, SoftwareOne's API-token prompt,

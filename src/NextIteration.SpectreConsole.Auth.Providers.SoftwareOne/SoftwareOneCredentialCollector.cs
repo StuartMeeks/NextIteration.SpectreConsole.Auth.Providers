@@ -205,12 +205,20 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
         }
 
         /// <summary>
-        /// Strip the literal token value from the response body and
-        /// truncate to <see cref="ErrorBodyMaxChars"/>. The token is
-        /// what we're trying to prevent from leaking into logs; the
-        /// truncation bounds size for everything else (memory pressure,
-        /// noise in aggregators).
+        /// Strip the token value from the response body and truncate to
+        /// <see cref="ErrorBodyMaxChars"/>. The token is what we're trying to
+        /// prevent from leaking into logs; the truncation bounds size for
+        /// everything else (memory pressure, noise in aggregators).
         /// </summary>
+        /// <remarks>
+        /// Both the raw value <em>and</em> its percent-encoded form are
+        /// redacted. The threat this guards — an upstream proxy echoing the
+        /// request URL — carries the token as
+        /// <c>Uri.EscapeDataString(apiToken)</c>, so redacting only the literal
+        /// missed the exact case it was written for: a token containing any of
+        /// <c>: + / =</c> (all of which appear in real Marketplace tokens, e.g.
+        /// the <c>idt:</c> prefix) survived redaction intact.
+        /// </remarks>
         internal static string SanitiseErrorBody(string body, string apiToken)
         {
             if (string.IsNullOrEmpty(body))
@@ -218,9 +226,19 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                 return body;
             }
 
-            var redacted = string.IsNullOrEmpty(apiToken)
-                ? body
-                : body.Replace(apiToken, "<redacted>", StringComparison.Ordinal);
+            var redacted = body;
+
+            if (!string.IsNullOrEmpty(apiToken))
+            {
+                var encoded = Uri.EscapeDataString(apiToken);
+
+                // Encoded form first: EscapeDataString only ever expands, so it
+                // is the longer of the two and must not be left partially
+                // rewritten by a raw-token match inside it. When the token needs
+                // no escaping the two are equal and the second pass is a no-op.
+                redacted = redacted.Replace(encoded, "<redacted>", StringComparison.Ordinal);
+                redacted = redacted.Replace(apiToken, "<redacted>", StringComparison.Ordinal);
+            }
 
             if (redacted.Length <= ErrorBodyMaxChars)
             {
