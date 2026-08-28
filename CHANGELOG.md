@@ -13,6 +13,25 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- **The core dependency's documented range was a full major behind the actual one, in six
+  places.** `Directory.Packages.props` declares `[2.0.0,3.0.0)`, but the comment directly
+  above it still explained the 1.x cap and said "Floored at 1.0.1", and a second comment
+  said the per-TFM floors match core "from 0.7.1 onward". `CLAUDE.md` repeated
+  `[1.0.0,2.0.0)` twice and asserted the collector/summary-provider contracts were
+  "unchanged from 0.7.1" — which the 2.0.0 entry below contradicts directly. All four
+  packed READMEs told nuget.org consumers "≥ 1.0.0", and the root README told new-provider
+  authors to reference core "at the current minor" rather than a major-capped range. Only
+  `CHANGELOG.md` was current. All six corrected, and the READMEs now state plainly that
+  core 1.x is not supported.
+- **Three packed READMEs advertised .NET 10 only.** All four csprojs target
+  `net8.0;net10.0` and CI tests both, but only GitHub's README said so. A net8.0 LTS team
+  reading the Adobe, Airtable or SoftwareOne package page would have ruled the package out
+  — despite net8.0 being a deliberately maintained target whose per-TFM floors CLAUDE.md
+  forbids raising precisely to keep those consumers supported.
+- **Airtable's README described the summary mask as "shorter than 10 chars"; the code
+  masks at `<= 10`.** An 11-character value is fingerprinted, not starred. Corrected, and
+  the boundary now has tests — existing coverage jumped from length 3 to 31.
+
 - **SoftwareOne's quick start now registers `IHttpClientFactory`.** The package README went
   straight from `AddCredentialStore` to `AddSoftwareOneAuthProvider()` with no
   `services.AddHttpClient()`, unlike Adobe's and GitHub's. `SoftwareOneCredentialCollector`

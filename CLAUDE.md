@@ -9,7 +9,7 @@ client-credentials against Adobe IMS), **Airtable** (personal-access tokens),
 Each ships an `ICredentialCollector` that drives the `accounts add` prompt and an
 `ICredentialSummaryProvider` that renders `accounts list`, plus a `ServiceCollectionExtensions`
 registration method. They collect credentials; the core Auth package owns encryption
-and on-disk storage. They consume it through a capped range (`[1.0.0,2.0.0)`).
+and on-disk storage. They consume it through a capped range (`[2.0.0,3.0.0)`).
 
 ## Things that are easy to get wrong here
 
@@ -20,13 +20,15 @@ and on-disk storage. They consume it through a capped range (`[1.0.0,2.0.0)`).
   exactly its own package. That extra step is a documented deviation from the canonical
   workflow (`NextIteration.Standards` EXCEPTIONS.md §3.0.1 and §3.2) — keep it, and keep
   the rest of the job identical to the template.
-- **The core dependency is a capped range, `[1.0.0,2.0.0)`.** The cap stops a `2.0.0`
+- **The core dependency is a capped range, `[2.0.0,3.0.0)`.** The cap stops a `3.0.0`
   silently changing the `ICredentialCollector` / `ICredentialSummaryProvider` /
-  `ICredentialManager` contracts underneath the providers. Floored at 1.0.0 — validated
-  against the core 1.0.0 surface, which adds `ExportCredentialsAsync` /
-  `RestoreCredentialAsync` to `ICredentialManager` (the accounts export/import feature);
-  the four test `FakeCredentialManager` doubles implement those members. The
-  collector/summary-provider contracts the providers implement are unchanged from 0.7.1.
+  `ICredentialManager` contracts underneath the providers. Floored at 2.0.0 — validated
+  against the core 2.0.0 surface, which added a trailing `CancellationToken` to
+  `ICredentialCollector.CollectAsync`, to the three `IAuthenticationService<,>` members
+  and across `ICredentialManager`. The providers **implement** those interfaces, so this
+  floor is not cosmetic: a 1.x provider against core 2.x would fail at runtime, and
+  **these providers do not resolve against core 1.x at all**. The previous
+  `[1.0.1,2.0.0)` cap fired on exactly that change, which is the cap working as intended.
   Bump the upper bound only after validating against the next core major.
 - **Per-TFM floors are deliberate.** `Microsoft.Extensions.DependencyInjection.Abstractions`
   and `Microsoft.Extensions.Http` floor at 8.0.x for `net8.0` and 10.0.x for `net10.0`.

@@ -18,7 +18,7 @@ Drops a ready-to-use `SoftwareOneCredential`, `SoftwareOneToken`, authentication
 dotnet add package NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 ```
 
-Requires the core package (`NextIteration.SpectreConsole.Auth` ≥ 1.0.0) — NuGet pulls it in transitively.
+Requires the core package (`NextIteration.SpectreConsole.Auth`, major-capped range `[2.0.0,3.0.0)`) — NuGet pulls it in transitively. Core 1.x is not supported: core 2.0.0 added a `CancellationToken` to the interfaces these providers implement.
 
 ---
 
@@ -130,7 +130,7 @@ other `HttpClient` in your application.
 
 ## Supported platforms
 
-Whatever the core package supports (currently Windows, macOS, Linux on .NET 10).
+Whatever the core package supports (currently Windows, macOS, Linux on .NET 8 and .NET 10).
 
 ---
 
