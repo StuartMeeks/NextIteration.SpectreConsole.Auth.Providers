@@ -39,6 +39,8 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         // bounding the size that lands in logs / aggregators.
         internal const int ErrorBodyMaxChars = 512;
 
+        private const string Redacted = "<redacted>";
+
         private readonly ICredentialManager _credentialManager;
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -103,11 +105,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
             {
                 // Include the IMS response body in the error so callers can
                 // see e.g. {"error":"invalid_client","error_description":"..."}
-                // rather than just a bare status code — but truncate so an
-                // upstream proxy that echoes the full request can't bloat
-                // logs (and bound the unlikely case of credential material
-                // making it back into the error body).
-                var safeBody = TruncateErrorBody(responseBody);
+                // rather than just a bare status code — but redact the client
+                // secret first. Truncation alone did not do that: an upstream
+                // proxy echoing the posted form puts client_secret= well inside
+                // the first 512 characters we keep.
+                var safeBody = SanitiseErrorBody(responseBody, credential.ClientSecret);
                 throw new HttpRequestException(
                     $"Adobe IMS token request failed: {(int)response.StatusCode} {response.StatusCode}. Body: {safeBody}");
             }
@@ -195,6 +197,41 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         /// before it lands in an exception message. Bounds the size of
         /// anything that gets logged downstream.
         /// </summary>
+        /// <summary>
+        /// Strip the client secret from the IMS error body, then truncate via
+        /// <see cref="TruncateErrorBody"/>.
+        /// </summary>
+        /// <remarks>
+        /// Adobe is the only one of the four providers that posts a true client
+        /// secret, so this is the one error path where credential material can
+        /// come back in an echoed request. The secret is sent as form data, so
+        /// three spellings are redacted — raw, percent-encoded, and
+        /// form-encoded (percent-encoded with <c>%20</c> written as <c>+</c>) —
+        /// longest first, so a shorter form cannot partially rewrite a longer
+        /// one and leave the remainder unmatched.
+        /// </remarks>
+        internal static string SanitiseErrorBody(string body, string clientSecret)
+        {
+            if (string.IsNullOrEmpty(body))
+            {
+                return body;
+            }
+
+            if (string.IsNullOrEmpty(clientSecret))
+            {
+                return TruncateErrorBody(body);
+            }
+
+            var percentEncoded = Uri.EscapeDataString(clientSecret);
+            var formEncoded = percentEncoded.Replace("%20", "+", StringComparison.Ordinal);
+
+            var redacted = body.Replace(percentEncoded, Redacted, StringComparison.Ordinal);
+            redacted = redacted.Replace(formEncoded, Redacted, StringComparison.Ordinal);
+            redacted = redacted.Replace(clientSecret, Redacted, StringComparison.Ordinal);
+
+            return TruncateErrorBody(redacted);
+        }
+
         internal static string TruncateErrorBody(string body)
         {
             if (string.IsNullOrEmpty(body) || body.Length <= ErrorBodyMaxChars)
