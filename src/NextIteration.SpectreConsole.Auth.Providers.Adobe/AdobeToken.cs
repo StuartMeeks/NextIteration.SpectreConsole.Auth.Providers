@@ -31,11 +31,32 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         public required Uri BaseUrl { get; init; }
 
         /// <summary>Timestamp (UTC) at which the token was created.</summary>
+        /// <remarks>
+        /// Documented and defaulted as UTC, but this is a public
+        /// <see langword="init"/> property, so a consumer can hand it a
+        /// <see cref="DateTimeKind.Local"/> value — <c>DateTime.Now</c> is the
+        /// obvious mistake. <see cref="IsExpired"/> normalises rather than
+        /// comparing a Kind-agnostic value against <see cref="DateTime.UtcNow"/>.
+        /// <see cref="DateTimeKind.Unspecified"/> is taken at its documented
+        /// word and treated as UTC, which is what a value round-tripped through
+        /// JSON without an offset will be.
+        /// </remarks>
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// <see cref="CreatedAt"/> as an unambiguous UTC instant.
+        /// </summary>
+        private DateTime CreatedAtUtc
+            => CreatedAt.Kind switch
+            {
+                DateTimeKind.Utc => CreatedAt,
+                DateTimeKind.Local => CreatedAt.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(CreatedAt, DateTimeKind.Utc),
+            };
 
         /// <inheritdoc />
         public bool IsExpired
-            => DateTime.UtcNow >= CreatedAt.AddSeconds(ExpiresIn) - ExpiryClockSkew;
+            => DateTime.UtcNow >= CreatedAtUtc.AddSeconds(ExpiresIn) - ExpiryClockSkew;
 
         /// <inheritdoc />
         public string GetAuthorizationHeader() => $"{TokenType} {AccessToken}";

@@ -13,6 +13,51 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
         }
 
         [Fact]
+        public void IsExpired_IsFalse_WhenCreatedAtIsLocalKind()
+        {
+            // CreatedAt is a public init property, so DateTime.Now is an easy
+            // mistake. Before normalisation this compared a local wall-clock
+            // value against DateTime.UtcNow: east of UTC a fresh token looked
+            // valid for hours after it had actually expired (every call 401s
+            // with no re-authenticate), and west of UTC it looked expired on
+            // arrival.
+            var token = NewToken(expiresIn: 3600, createdAt: DateTime.Now);
+
+            Assert.False(token.IsExpired);
+        }
+
+        [Fact]
+        public void IsExpired_IsTrue_WhenLocalKindTokenHasActuallyExpired()
+        {
+            var token = NewToken(expiresIn: 60, createdAt: DateTime.Now.AddMinutes(-10));
+
+            Assert.True(token.IsExpired);
+        }
+
+        [Fact]
+        public void IsExpired_TreatsUnspecifiedKindAsUtc_AsDocumented()
+        {
+            // A value round-tripped through JSON without an offset comes back
+            // Unspecified. CreatedAt is documented as UTC, so it is taken at its
+            // word rather than letting ToUniversalTime() assume local time —
+            // which would otherwise shift the expiry by the machine's offset.
+            var unspecified = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+            Assert.False(NewToken(expiresIn: 3600, createdAt: unspecified).IsExpired);
+            Assert.True(NewToken(expiresIn: 0, createdAt: unspecified).IsExpired);
+        }
+
+        [Fact]
+        public void IsExpired_AgreesAcrossAllThreeKinds_ForTheSameInstant()
+        {
+            var utcNow = DateTime.UtcNow;
+            var asUtc = NewToken(expiresIn: 3600, createdAt: utcNow);
+            var asLocal = NewToken(expiresIn: 3600, createdAt: utcNow.ToLocalTime());
+
+            Assert.Equal(asUtc.IsExpired, asLocal.IsExpired);
+        }
+
+        [Fact]
         public void IsExpired_IsTrue_WhenLifetimeIsZero()
         {
             // ExpiresIn=0 means already expired (the 30s clock-skew buffer
