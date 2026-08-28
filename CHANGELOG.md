@@ -27,6 +27,29 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prerequisite that `AddGitHubAuthProvider` already had, so IntelliSense shows it at the
   DI entry point.
 
+### Security
+
+- **SoftwareOne: the API token no longer reaches consumer logs via the request URL.**
+  The Marketplace token lookup passes the token in an `eq(token,'…')` query filter, and
+  `AddSoftwareOneAuthProvider` never registered the collector's named client — so it got
+  `IHttpClientFactory`'s default logging pipeline. On `Microsoft.Extensions.Http` 8.0.1,
+  the floor this repo declares for `net8.0`, that logs the full request URI at
+  `Information` level:
+
+  ```
+  Sending HTTP request GET https://api.softwareone.com/v1/accounts/api-tokens?eq(token,'idt%3AAbC%2BdEf%2F123%3D')&limit=2
+  ```
+
+  Any consuming CLI with an information-level logger therefore wrote the plaintext,
+  long-lived token into its log file or aggregator on every `accounts add`. No HTTP
+  failure was required. (`Microsoft.Extensions.Http` 10.0.10 redacts the query, so this
+  was reachable specifically for consumers on the net8.0 floor.)
+
+  `AddSoftwareOneAuthProvider` now registers the named client with `RemoveAllLoggers()`.
+  Suppression is scoped to that one client and survives a consumer pre-configuring the
+  same name, as the README documents. Registering the client here also means the collector
+  resolves without the consumer calling `AddHttpClient()` — the footgun noted below.
+
 ### Fixed
 
 - **SoftwareOne: error-body redaction now covers the percent-encoded token.**
