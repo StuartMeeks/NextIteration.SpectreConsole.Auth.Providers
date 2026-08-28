@@ -48,7 +48,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             """);
             var collector = new SoftwareOneCredentialCollector(http);
 
-            _ = await collector.LookupTokenAsync(BaseUrl, "my-token-value");
+            await collector.LookupTokenAsync(BaseUrl, "my-token-value");
 
             Assert.NotNull(http.LastRequest);
             Assert.Equal(HttpMethod.Get, http.LastRequest!.Method);
@@ -67,7 +67,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             """);
             var collector = new SoftwareOneCredentialCollector(http);
 
-            _ = await collector.LookupTokenAsync(BaseUrl, "token with spaces & slash/");
+            await collector.LookupTokenAsync(BaseUrl, "token with spaces & slash/");
 
             // URL-encoded: space -> %20, & -> %26, / -> %2F.
             // Use AbsoluteUri (canonical form) rather than ToString() which
