@@ -64,5 +64,23 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             Assert.Equal("Status", single.Key);
             Assert.Equal("<unreadable credential>", single.Value);
         }
+        [Fact]
+        public void GetDisplayFields_JsonNullLiteral_ReturnsUnreadableMarker()
+        {
+            // The three sibling providers each have this fact; GitHub only had
+            // the malformed-JSON one, which reaches the catch(JsonException)
+            // arm. A literal "null" deserializes successfully *to null*, so it
+            // exercises the separate `credential is null` guard — without which
+            // one bad row throws a NullReferenceException inside the Spectre
+            // render loop and takes down the whole `accounts list`.
+            var provider = new GitHubCredentialSummaryProvider();
+
+            var fields = provider.GetDisplayFields("null");
+
+            var field = Assert.Single(fields);
+            Assert.Equal("Status", field.Key);
+            Assert.Equal("<unreadable credential>", field.Value);
+        }
+
     }
 }

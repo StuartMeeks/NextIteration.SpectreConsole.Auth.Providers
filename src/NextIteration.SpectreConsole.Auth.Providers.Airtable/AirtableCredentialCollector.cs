@@ -23,9 +23,7 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
             var accessToken = await AnsiConsole.PromptAsync(
                 new TextPrompt<string>("Enter Access Token:")
                     .Secret()
-                    .Validate(value => string.IsNullOrWhiteSpace(value)
-                        ? ValidationResult.Error("Access token cannot be empty")
-                        : ValidationResult.Success()), cancellationToken).ConfigureAwait(false);
+                    .Validate(ValidateAccessToken), cancellationToken).ConfigureAwait(false);
 
             var environment = await AnsiConsole.PromptAsync(
                 new SelectionPrompt<string>()
@@ -40,5 +38,18 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable
 
             return (JsonSerializer.Serialize(credential, AirtableCredential.JsonOptions), credential.Environment);
         }
+        /// <summary>
+        /// Rejects an empty or whitespace-only access token.
+        /// </summary>
+        /// <remarks>
+        /// Factored out of the prompt's inline lambda so it can be tested
+        /// directly, matching how the other three providers expose their URL
+        /// validators.
+        /// </remarks>
+        internal static ValidationResult ValidateAccessToken(string value)
+            => string.IsNullOrWhiteSpace(value)
+                ? ValidationResult.Error("Access token cannot be empty")
+                : ValidationResult.Success();
+
     }
 }

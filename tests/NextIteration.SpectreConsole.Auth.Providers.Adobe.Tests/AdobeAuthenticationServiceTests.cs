@@ -217,6 +217,21 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
         }
 
         [Fact]
+        public async Task AuthenticateAsync_WhenImsReturns200WithNullBody_Throws()
+        {
+            // Pins the `?? throw` on the deserialize. Every success stub in this
+            // file supplies a complete body, so deleting that guard used to break
+            // nothing.
+            var http = StubHttpClientFactory.ReturningJson("null");
+            var service = new AdobeAuthenticationService(new FakeCredentialManager(), http);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => service.AuthenticateAsync(NewCredential()));
+
+            Assert.Contains("did not deserialize", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void SanitiseErrorBody_RedactsAllThreeSpellingsOfTheSecret()
         {
             const string secret = "p8e-AbC+dEf/123=";
@@ -401,5 +416,24 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             BaseUrl = new Uri("https://partners.adobe.io/"),
             Environment = "Production",
         };
+        [Fact]
+        public async Task AuthenticateAsync_AsksTheManagerForThisProvidersCredential()
+        {
+            // The real ICredentialManager keys its store by providerName, so a
+            // double that discards the argument satisfies the signature and not
+            // the contract. Nothing asserted it until now.
+            var http = StubHttpClientFactory.ReturningJson(
+                """{ "access_token": "tok", "token_type": "bearer", "expires_in": 3600 }""");
+            var manager = new FakeCredentialManager
+            {
+                SelectedCredentialJson = JsonSerializer.Serialize(NewCredential(), AdobeCredential.JsonOptions),
+            };
+            var service = new AdobeAuthenticationService(manager, http);
+
+            await service.AuthenticateAsync();
+
+            Assert.Equal(AdobeCredential.ProviderName, manager.RequestedProviderName);
+        }
+
     }
 }

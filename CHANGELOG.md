@@ -11,6 +11,24 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tests
+
+- **Closed the highest-value coverage gaps found in review.** `PollForTokenAsync`'s
+  `expired_token`, `case null or ""` and `default:` arms and the non-success token-request
+  branch had no tests, so inverting the `null or ""` guard — which hot-loops until the
+  deadline and then reports a misleading "Timed out" — left the suite green. GitHub's
+  refresh **transport**-error branch, the only place the stored refresh token is scrubbed
+  from an echoed body, was never reached: the sole refresh-failure test stubbed a `200`
+  carrying an error field. GitHub was the only summary provider without the
+  JSON-`null`-literal test its three siblings have, leaving the `credential is null` guard
+  uncovered — the guard that stops one bad row taking down the whole `accounts list` with
+  a `NullReferenceException` inside the Spectre render loop. Adobe's literal-`null` token
+  body was unpinned. Airtable's access-token guard was an inline lambda with no seam, so
+  it is now `internal static ValidateAccessToken`, matching how the other three expose
+  their URL validators. And all four `FakeCredentialManager` doubles discarded the
+  `providerName` the real `ICredentialManager` keys its store by; they now capture it and
+  four tests assert it.
+
 ### Documentation
 
 - **The core dependency's documented range was a full major behind the actual one, in six

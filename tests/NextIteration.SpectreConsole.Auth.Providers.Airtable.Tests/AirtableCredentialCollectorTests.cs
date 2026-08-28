@@ -35,5 +35,16 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests
                 () => collector.CollectAsync(cts.Token));
         }
 
+        [Theory]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        [InlineData("\t", false)]
+        [InlineData("patAbC123.0123456789abcdef", true)]
+        // The guard was an inline lambda inside the prompt with no seam, so it
+        // had no coverage at all — this collector's only test asserted
+        // ProviderName.
+        public void ValidateAccessToken_RejectsEmptyOrWhitespace(string value, bool expectedOk)
+            => Assert.Equal(expectedOk, AirtableCredentialCollector.ValidateAccessToken(value).Successful);
+
     }
 }

@@ -12,8 +12,18 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
     {
         public string? SelectedCredentialJson { get; set; }
 
+        /// <summary>
+        /// The <c>providerName</c> the subject asked for. The real
+        /// <see cref="ICredentialManager"/> keys its store by this, so a double
+        /// that discards it satisfies the signature and not the contract.
+        /// </summary>
+        public string? RequestedProviderName { get; private set; }
+
         public Task<string?> GetSelectedCredentialAsync(string providerName, CancellationToken cancellationToken = default)
-            => Task.FromResult(SelectedCredentialJson);
+        {
+            RequestedProviderName = providerName;
+            return Task.FromResult(SelectedCredentialJson);
+        }
 
         public Task<string?> GetCredentialByIdAsync(string providerName, string accountId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();

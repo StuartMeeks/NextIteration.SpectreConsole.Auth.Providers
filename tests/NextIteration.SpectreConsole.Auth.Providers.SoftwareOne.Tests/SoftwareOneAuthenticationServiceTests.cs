@@ -148,6 +148,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             Assert.Equal(new Uri("https://staging.softwareone.com/"), token.BaseUrl);
             Assert.Equal("Staging", token.Environment);
             Assert.Equal("Vendor", token.Actor);
+            // The real ICredentialManager keys its store by providerName, so a
+            // double that discards the argument satisfies the signature and not
+            // the contract. Nothing asserted it until now.
+            Assert.Equal(SoftwareOneCredential.ProviderName, manager.RequestedProviderName);
         }
 
         [Fact]
