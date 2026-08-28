@@ -139,5 +139,24 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => service.ValidateTokenAsync(null!));
         }
+        [Fact]
+        public async Task AuthenticateAsync_AsksTheManagerForThisProvidersCredential()
+        {
+            // The real ICredentialManager keys its store by providerName, so a
+            // double that discards the argument satisfies the signature and not
+            // the contract. Nothing asserted it until now.
+            var manager = new FakeCredentialManager
+            {
+                SelectedCredentialJson = JsonSerializer.Serialize(
+                    new AirtableCredential { AccessToken = "pat123", Environment = "Production" },
+                    AirtableCredential.JsonOptions),
+            };
+            var service = new AirtableAuthenticationService(manager);
+
+            await service.AuthenticateAsync();
+
+            Assert.Equal(AirtableCredential.ProviderName, manager.RequestedProviderName);
+        }
+
     }
 }

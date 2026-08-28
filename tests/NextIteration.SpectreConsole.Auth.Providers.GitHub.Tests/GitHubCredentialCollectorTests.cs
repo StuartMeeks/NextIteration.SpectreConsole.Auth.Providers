@@ -338,6 +338,72 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
         }
 
         [Fact]
+        public async Task PollForTokenAsync_Throws_OnExpiredToken()
+        {
+            var stub = StubHttpClientFactory.ReturningJson("""{ "error": "expired_token" }""");
+            var collector = Collector(stub, out _);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.PollForTokenAsync(
+                    new Uri("https://github.com/"), "id", NewDevice(expiresIn: 900), CancellationToken.None));
+
+            Assert.Contains("expired", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("accounts add", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("""{ }""")]
+        [InlineData("""{ "error": "" }""")]
+        [InlineData("""{ "error": null }""")]
+        public async Task PollForTokenAsync_Throws_WhenResponseHasNeitherTokenNorError(string body)
+        {
+            // Guards the `case null or ""` arm. Without it these fall through to
+            // the deadline and report a misleading "Timed out" after polling for
+            // the full expires_in window.
+            var stub = StubHttpClientFactory.ReturningJson(body);
+            var collector = Collector(stub, out _);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.PollForTokenAsync(
+                    new Uri("https://github.com/"), "id", NewDevice(expiresIn: 900), CancellationToken.None));
+
+            Assert.Contains("neither an access token nor an error", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task PollForTokenAsync_Throws_OnUnknownError_AndSurfacesTheDescription()
+        {
+            // Covers the `default:` arm and FormatErrorDescription, so the
+            // provider's own explanation reaches the user rather than a bare
+            // error code.
+            var stub = StubHttpClientFactory.ReturningJson(
+                """{ "error": "unsupported_grant_type", "error_description": "device flow is disabled for this app" }""");
+            var collector = Collector(stub, out _);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.PollForTokenAsync(
+                    new Uri("https://github.com/"), "id", NewDevice(expiresIn: 900), CancellationToken.None));
+
+            Assert.Contains("unsupported_grant_type", ex.Message, StringComparison.Ordinal);
+            Assert.Contains("device flow is disabled for this app", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task PollForTokenAsync_Throws_WhenTokenEndpointReturnsNonSuccess()
+        {
+            var stub = StubHttpClientFactory.ReturningJson(
+                """{ "message": "service unavailable" }""", HttpStatusCode.ServiceUnavailable);
+            var collector = Collector(stub, out _);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.PollForTokenAsync(
+                    new Uri("https://github.com/"), "id", NewDevice(expiresIn: 900), CancellationToken.None));
+
+            Assert.Contains("token request failed", ex.Message, StringComparison.Ordinal);
+            Assert.Contains("ServiceUnavailable", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task LookupUserAsync_ParsesUser_AndSendsAuthAndUserAgent()
         {
             var stub = StubHttpClientFactory.ReturningJson(

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 
 using Xunit;
@@ -87,6 +88,40 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
         }
 
         [Fact]
+        public async Task AuthenticateAsync_WhenRefreshReturnsNonSuccess_RedactsTheStoredRefreshToken()
+        {
+            // The only refresh-failure test stubbed a *200* carrying an error
+            // field, which lands on the DTO check. The transport branch — the
+            // one place SanitiseErrorBody scrubs the stored refresh token from
+            // an echoed body — had no coverage at all, while the equivalent
+            // access-token path in the collector did.
+            var stub = StubHttpClientFactory.ReturningJson(
+                """{ "error": "bad gateway", "echo": "grant_type=refresh_token&refresh_token=ghr_old" }""",
+                HttpStatusCode.BadGateway);
+            var svc = Service(stub);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => svc.AuthenticateAsync(Credential(expiresAt: Now - TimeSpan.FromMinutes(1), refreshToken: "ghr_old")));
+
+            Assert.DoesNotContain("ghr_old", ex.Message, StringComparison.Ordinal);
+            Assert.Contains("<redacted>", ex.Message, StringComparison.Ordinal);
+            // Non-credential diagnostics survive.
+            Assert.Contains("BadGateway", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task AuthenticateAsync_WhenRefreshReturns200WithNullBody_Throws()
+        {
+            var stub = StubHttpClientFactory.ReturningJson("null");
+            var svc = Service(stub);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => svc.AuthenticateAsync(Credential(expiresAt: Now - TimeSpan.FromMinutes(1), refreshToken: "ghr_old")));
+
+            Assert.Contains("did not deserialize", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task AuthenticateAsync_Throws_WhenRefreshRejected()
         {
             var stub = StubHttpClientFactory.ReturningJson("""{ "error": "bad_refresh_token" }""");
@@ -134,6 +169,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             var token = await svc.AuthenticateAsync();
 
             Assert.Equal("gho_stored", token.AccessToken);
+            // The real ICredentialManager keys its store by providerName, so a
+            // double that discards the argument satisfies the signature and not
+            // the contract. Nothing asserted it until now.
+            Assert.Equal(GitHubCredential.ProviderName, manager.RequestedProviderName);
         }
 
         [Fact]

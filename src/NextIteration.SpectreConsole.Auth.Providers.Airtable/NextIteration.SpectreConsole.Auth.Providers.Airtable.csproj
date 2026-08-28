@@ -18,6 +18,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="NextIteration.SpectreConsole.Auth.Providers.Airtable.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<!-- Versions live in /Directory.Packages.props (CPM). -->
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 		<PackageReference Include="Spectre.Console" />
