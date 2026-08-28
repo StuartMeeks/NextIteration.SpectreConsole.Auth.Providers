@@ -211,6 +211,57 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             Assert.Equal([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)], delays);
         }
 
+        [Theory]
+        // Floor: a 0 or negative interval would otherwise hot-loop the token
+        // endpoint as fast as the network allows.
+        [InlineData(0, 1)]
+        [InlineData(-5, 1)]
+        [InlineData(1, 1)]
+        // Pass-through in the sane range.
+        [InlineData(5, 5)]
+        [InlineData(60, 60)]
+        // Ceiling: a misconfigured or hostile server must not stall the prompt,
+        // and past ~4.29e9 seconds Task.Delay throws ArgumentOutOfRangeException
+        // from inside the first await — before the deadline check can intervene.
+        [InlineData(61, 60)]
+        [InlineData(9999999, 60)]
+        [InlineData(int.MaxValue, 60)]
+        public async Task PollForTokenAsync_ClampsServerSuppliedInterval(int supplied, int expectedSeconds)
+        {
+            var stub = StubHttpClientFactory.ReturningJson(
+                """{ "access_token": "gho_ok", "token_type": "bearer" }""");
+            var collector = Collector(stub, out var delays);
+
+            await collector.PollForTokenAsync(
+                new Uri("https://github.com/"), "id",
+                NewDevice(expiresIn: 900, interval: supplied),
+                CancellationToken.None);
+
+            Assert.Equal([TimeSpan.FromSeconds(expectedSeconds)], delays);
+        }
+
+        [Fact]
+        public async Task PollForTokenAsync_SlowDownBackoff_StopsAtTheCeiling()
+        {
+            // Repeated slow_down responses must not walk the interval past the
+            // same cap the initial clamp applies.
+            var stub = StubHttpClientFactory.Sequence(
+                () => StubHttpClientFactory.JsonResponse("""{ "error": "slow_down" }"""),
+                () => StubHttpClientFactory.JsonResponse("""{ "error": "slow_down" }"""),
+                () => StubHttpClientFactory.JsonResponse("""{ "access_token": "gho_ok", "token_type": "bearer" }"""));
+            var collector = Collector(stub, out var delays);
+
+            await collector.PollForTokenAsync(
+                new Uri("https://github.com/"), "id",
+                NewDevice(expiresIn: 9000, interval: 58),
+                CancellationToken.None);
+
+            // 58 -> 60 (capped from 63) -> 60 (capped from 65).
+            Assert.Equal(
+                [TimeSpan.FromSeconds(58), TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60)],
+                delays);
+        }
+
         [Fact]
         public async Task PollForTokenAsync_AppliesSlowDownBackoff()
         {

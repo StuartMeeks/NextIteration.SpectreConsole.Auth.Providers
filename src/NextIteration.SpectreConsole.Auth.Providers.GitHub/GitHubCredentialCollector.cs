@@ -47,6 +47,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         // enough to keep useful error payloads, small enough to bound logs.
         internal const int ErrorBodyMaxChars = 512;
 
+        // Bounds on the server-supplied device-flow poll interval.
+        internal const int MinPollIntervalSeconds = 1;
+        internal const int MaxPollIntervalSeconds = 60;
+        internal const int SlowDownBackoffSeconds = 5;
+
         private static readonly JsonSerializerOptions JsonOptions
             = new() { PropertyNameCaseInsensitive = true };
 
@@ -194,7 +199,15 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
         internal async Task<GitHubAccessTokenDto> PollForTokenAsync(
             Uri webBaseUrl, string clientId, GitHubDeviceCodeDto deviceCode, CancellationToken cancellationToken)
         {
-            var interval = TimeSpan.FromSeconds(Math.Max(deviceCode.Interval, 1));
+            // Clamp at both ends. The floor stops a 0 or negative interval
+            // hot-looping the token endpoint; the ceiling stops a misconfigured
+            // or hostile server stalling the prompt — or, past ~4.29e9 seconds,
+            // making Task.Delay throw ArgumentOutOfRangeException from inside
+            // the first await, where the deadline check below cannot intervene.
+            // An interval above a minute is meaningless against a device code
+            // that expires in fifteen.
+            var interval = TimeSpan.FromSeconds(
+                Math.Clamp(deviceCode.Interval, MinPollIntervalSeconds, MaxPollIntervalSeconds));
             var deadline = _now() + TimeSpan.FromSeconds(deviceCode.ExpiresIn);
 
             while (true)
@@ -218,7 +231,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     case "authorization_pending":
                         break;
                     case "slow_down":
-                        interval += TimeSpan.FromSeconds(5);
+                        // Back off within the same ceiling, so repeated
+                        // slow_down responses cannot walk the interval past the
+                        // cap either.
+                        interval = TimeSpan.FromSeconds(Math.Min(
+                            interval.TotalSeconds + SlowDownBackoffSeconds,
+                            MaxPollIntervalSeconds));
                         break;
                     case "access_denied":
                         throw new InvalidOperationException(
