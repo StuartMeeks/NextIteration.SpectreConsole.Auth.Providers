@@ -176,6 +176,30 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
         }
 
         [Fact]
+        public async Task PollForTokenAsync_HonoursCancellation_BeforeFirstPoll()
+        {
+            // The production _delay seam is Task.Delay(ts, ct), so a cancelled
+            // token aborts the poll loop at its first await rather than running
+            // to the device code's expiry. CollectAsync forwards its own token
+            // here; passing CancellationToken.None instead would make `accounts
+            // add` uncancellable for the full expires_in window.
+            var stub = StubHttpClientFactory.ReturningJson("""{ "error": "authorization_pending" }""");
+            var collector = new GitHubCredentialCollector(
+                stub,
+                (_, ct) => Task.FromCanceled(ct),
+                static () => DateTimeOffset.UnixEpoch);
+
+            using var cts = new CancellationTokenSource();
+            await cts.CancelAsync();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => collector.PollForTokenAsync(
+                    new Uri("https://github.com/"), "id", NewDevice(expiresIn: 900), cts.Token));
+
+            Assert.Empty(stub.Requests);
+        }
+
+        [Fact]
         public async Task LookupUserAsync_ParsesUser_AndSendsAuthAndUserAgent()
         {
             var stub = StubHttpClientFactory.ReturningJson(
