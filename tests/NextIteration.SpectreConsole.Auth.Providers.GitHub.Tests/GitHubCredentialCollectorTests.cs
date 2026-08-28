@@ -49,15 +49,67 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
         }
 
         [Theory]
+        // Accepted: a bare host, an optional numeric port, a trailing slash the
+        // collector already normalises away, and IP literals.
         [InlineData("github.com", true)]
+        [InlineData("GitHub.com", true)]
         [InlineData("ghe.example.com", true)]
+        [InlineData("ghe.example.com/", true)]
         [InlineData("ghe.example.com:8443", true)]
+        [InlineData("github.com:443", true)]
+        [InlineData("192.168.1.10", true)]
+        [InlineData("192.168.1.10:8443", true)]
+        [InlineData("[::1]", true)]
+        [InlineData("[::1]:8443", true)]
+        // Rejected: empty.
         [InlineData("", false)]
         [InlineData("   ", false)]
+        // Rejected: userinfo. Uri reads the host as whatever follows the '@',
+        // so these would send the access token — and every later refresh POST
+        // — to the trailing host while still reading as github.com.
+        [InlineData("github.com@evil.example.com", false)]
+        [InlineData("user:pw@evil.example.com", false)]
+        // Rejected: a path, query or fragment riding along on the host.
+        [InlineData("evil.example.com/path", false)]
+        [InlineData("ghe.example.com?q=1", false)]
+        [InlineData("ghe.example.com#frag", false)]
+        [InlineData("ghe.example.com\\path", false)]
+        // Rejected: a pasted scheme — Uri parses this with Host == "https".
+        [InlineData("https://ghe.example.com", false)]
+        [InlineData("http://ghe.example.com", false)]
+        // Rejected: malformed ports and hosts.
+        [InlineData("ghe.example.com:notaport", false)]
+        [InlineData("ghe.example.com:", false)]
+        [InlineData("ghe.example.com:0", false)]
+        [InlineData("[::1]:", false)]
+        [InlineData("ghe.example.com:99999", false)]
+        [InlineData("gh ub.com", false)]
+        [InlineData("-bad.example.com", false)]
         public void ValidateHost_AcceptsBareHostsOnly(string host, bool expectedOk)
         {
             var result = GitHubCredentialCollector.ValidateHost(host);
             Assert.Equal(expectedOk, result.Successful);
+        }
+
+        [Theory]
+        [InlineData("github.com@evil.example.com")]
+        [InlineData("user:pw@evil.example.com")]
+        [InlineData("evil.example.com/path")]
+        [InlineData("https://ghe.example.com")]
+        public void ValidateHost_RejectsValuesThatWouldRedirectTheToken(string host)
+        {
+            // Guards the specific consequence rather than just the verdict: if
+            // any of these ever passed validation again, DeriveApiBaseUrl would
+            // hand LookupUserAsync a URL whose real host is not what the user
+            // typed, and the bearer token would go there.
+            Assert.False(GitHubCredentialCollector.ValidateHost(host).Successful);
+
+            var derived = new Uri($"https://{host.Trim().TrimEnd('/')}/", UriKind.Absolute);
+            Assert.True(
+                derived.UserInfo.Length != 0
+                    || derived.AbsolutePath != "/"
+                    || !string.Equals(derived.Host, host, StringComparison.OrdinalIgnoreCase),
+                $"'{host}' no longer misparses — re-check whether this case still needs rejecting.");
         }
 
         [Fact]

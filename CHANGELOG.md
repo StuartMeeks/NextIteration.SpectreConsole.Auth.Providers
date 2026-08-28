@@ -13,6 +13,19 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **GitHub: the host prompt now rejects anything that is not a bare `host[:port]`.**
+  `ValidateHost` only checked `Uri.TryCreate($"https://{host}/")`, which parses almost
+  any string, so its own error message ("Must be a bare host…") enforced nothing. A value
+  carrying userinfo — `github.com@evil.example.com` — passed validation and produced an
+  API base URL whose real host was `evil.example.com`, so the device-flow token, the
+  token-bearing `GET /user` call and every later `client_id`+`refresh_token` refresh POST
+  went to the attacker's host, while `accounts list` still rendered something that read as
+  github.com at a glance. Pasted schemes (`https://ghe.example.com`, parsed with
+  `Host == "https"`), paths, queries, fragments and malformed ports were accepted too.
+  Validation now splits an optional numeric port (bracketed IPv6 literals included),
+  requires `Uri.CheckHostName` to recognise the host, and re-checks the derived URI for
+  stray userinfo, path, query or fragment.
+
 - **GitHub: `accounts add` is cancellable again during the device-flow poll.**
   `GitHubCredentialCollector.CollectAsync` passed `CancellationToken.None` into
   `PollForTokenAsync` while forwarding its real token to every neighbouring call. The
