@@ -62,6 +62,17 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Adobe: `AdobeToken.IsExpired` no longer compares a Kind-agnostic `DateTime` against
+  `DateTime.UtcNow`.** `CreatedAt` is a public `init` property documented as UTC, but
+  nothing enforced that, and `DateTime.Now` is the obvious mistake for a consumer
+  constructing a token directly. East of UTC a freshly issued token reported
+  `IsExpired == false` for hours after it had actually expired — so every call 401'd and
+  the retry-on-expiry path never re-authenticated — and west of UTC it reported expired on
+  arrival. `IsExpired` now normalises: `Local` is converted, `Utc` is used as-is, and
+  `Unspecified` is taken at the property's documented word and treated as UTC (which is
+  what a value round-tripped through JSON without an offset will be). `GitHubToken` was
+  already immune, using `DateTimeOffset`; Airtable and SoftwareOne tokens never expire.
+
 - **GitHub: the server-supplied device-flow poll interval is clamped at both ends.** It was
   floored at 1 second (`Math.Max(deviceCode.Interval, 1)`) with no ceiling, and the
   `slow_down` back-off grew it without bound. A misconfigured or hostile GHES returning
