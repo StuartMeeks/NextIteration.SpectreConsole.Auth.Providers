@@ -137,7 +137,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                 AccessToken = accessToken,
                 RefreshToken = tokenDto.RefreshToken,
                 AccessTokenExpiresAt = expiresAt,
-                Scopes = string.IsNullOrWhiteSpace(tokenDto.Scope) ? scopes : tokenDto.Scope!,
+                // Store what GitHub says it granted, never what we asked for.
+                // Substituting the prompt value here made `accounts list`
+                // report scopes the token may not hold — and, since the
+                // substitute is never empty, made the summary provider's
+                // "(none)" branch unreachable through this path.
+                Scopes = tokenDto.Scope ?? string.Empty,
                 WebBaseUrl = webBaseUrl,
                 ApiBaseUrl = apiBaseUrl,
                 Login = user.Login,

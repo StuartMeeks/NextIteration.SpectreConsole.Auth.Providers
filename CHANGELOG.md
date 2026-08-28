@@ -99,6 +99,16 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **GitHub: `accounts list` reports the scopes GitHub granted, not the ones that were
+  requested.** When the token response omitted `scope`, the collector substituted the
+  value typed at the prompt — contradicting `GitHubCredential.Scopes` ("scopes the token
+  was **granted**") and the README's "Source: token response". An OAuth App issuing
+  expiring tokens can legitimately omit `scope`, so `accounts list` would report
+  `Scopes: repo read:org` for a token that holds neither, sending someone debugging a 403
+  to look in the wrong place. Because the substitute was never empty, it also made the
+  summary provider's `(none)` branch unreachable through `accounts add`. The granted
+  value is now stored verbatim.
+
 - **Adobe, SoftwareOne and GitHub: a path-based base URL no longer loses its path.**
   `new Uri(base, "relative")` replaces the base's last path segment unless the base ends
   in `/`, so a user behind a path-based gateway entering

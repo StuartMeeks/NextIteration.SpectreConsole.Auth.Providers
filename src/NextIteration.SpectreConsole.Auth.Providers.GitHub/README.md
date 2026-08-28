@@ -108,7 +108,7 @@ Each `accounts add` run serialises a `GitHubCredential` into the encrypted keyst
 | `AccessToken`          | device flow           | The user access token                                                            |
 | `RefreshToken`         | device flow           | Only present if the OAuth App issues **expiring** tokens; otherwise `null`        |
 | `AccessTokenExpiresAt` | device flow           | Only present for expiring tokens; otherwise `null`                               |
-| `Scopes`               | token response        | Space-delimited granted scopes                                                   |
+| `Scopes`               | token response        | Space-delimited granted scopes, verbatim — empty if GitHub omits `scope`         |
 | `WebBaseUrl`           | derived from host     | `https://github.com/` or `https://{host}/` for GitHub Enterprise Server          |
 | `ApiBaseUrl`           | derived from host     | `https://api.github.com/` or `https://{host}/api/v3/` for Enterprise Server      |
 | `Login` / `Name`       | `GET /user`           | The authenticated user's handle and display name                                |
