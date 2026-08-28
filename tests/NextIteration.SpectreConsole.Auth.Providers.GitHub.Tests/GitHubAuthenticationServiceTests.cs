@@ -106,6 +106,24 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub.Tests
             Assert.Contains("No GitHub credential selected", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        [InlineData("{ not json")]
+        [InlineData("<html><body>Sign in to continue</body></html>")]
+        public async Task AuthenticateAsync_WhenSelectedJsonIsMalformed_ThrowsActionableException(string stored)
+        {
+            // GitHub was the only one of the four with no coverage for a stale or
+            // corrupt stored credential. Like the siblings, it must surface
+            // something the user can act on rather than a raw JsonException.
+            var svc = Service(
+                StubHttpClientFactory.ReturningJson("{}"),
+                new FakeCredentialManager { SelectedCredentialJson = stored });
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => svc.AuthenticateAsync());
+
+            Assert.Contains("accounts add", ex.Message, StringComparison.Ordinal);
+            Assert.IsType<JsonException>(ex.InnerException);
+        }
+
         [Fact]
         public async Task AuthenticateAsync_ReadsSelectedCredential_FromManager()
         {

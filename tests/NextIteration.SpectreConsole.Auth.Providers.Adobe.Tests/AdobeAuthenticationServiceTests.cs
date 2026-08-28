@@ -314,14 +314,22 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe.Tests
             Assert.Contains("No Adobe credential selected", ex.Message, StringComparison.Ordinal);
         }
 
-        [Fact]
-        public async Task AuthenticateAsync_SelectedJsonMalformed_Throws()
+        [Theory]
+        [InlineData("{ not json")]
+        [InlineData("<html><body>Sign in to continue</body></html>")]
+        // Note: an empty/whitespace stored value is not covered here — it hits
+        // the earlier "No … credential selected" guard, which is its own test.
+        public async Task AuthenticateAsync_SelectedJsonMalformed_ThrowsActionableException(string stored)
         {
             var http = StubHttpClientFactory.ReturningJson("{}");
-            var manager = new FakeCredentialManager { SelectedCredentialJson = "{ not json" };
+            var manager = new FakeCredentialManager { SelectedCredentialJson = stored };
             var service = new AdobeAuthenticationService(manager, http);
 
-            await Assert.ThrowsAsync<JsonException>(() => service.AuthenticateAsync());
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => service.AuthenticateAsync());
+
+            Assert.Contains("accounts add", ex.Message, StringComparison.Ordinal);
+            Assert.IsType<JsonException>(ex.InnerException);
         }
 
         [Fact]

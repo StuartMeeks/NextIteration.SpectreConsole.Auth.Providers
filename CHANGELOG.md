@@ -62,6 +62,21 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **All providers: a malformed response or stored credential no longer escapes as a raw
+  `JsonException`.** The `?? throw new InvalidOperationException("…did not deserialize")`
+  guards only fired for a body that is the literal `null`; anything merely malformed — a
+  corporate captive portal's HTML interstitial, a truncated response, a payload missing a
+  required member — surfaced as `System.Text.Json.JsonException: '<' is an invalid start
+  of a value. Path: $`, which names neither the provider, the endpoint, nor anything the
+  user can act on. `SoftwareOneCredentialCollector.LookupTokenAsync`'s XML doc already
+  promised `InvalidOperationException` "on any failure mode … (malformed response)", and
+  its own test asserted `JsonException` — codifying the divergence rather than catching
+  it. All ten deserialization sites now wrap `JsonException` in an
+  `InvalidOperationException` that names the failure, keeping the original as
+  `InnerException`. For a stale stored credential the message now says to delete it and
+  re-run `accounts add`. This also aligns the auth services with the summary providers,
+  which already caught `JsonException` and rendered `<unreadable credential>`.
+
 - **All providers: a 200 response whose fields are JSON `null` is now rejected at the
   point it arrives.** The wire DTOs use `required`, which System.Text.Json satisfies by a
   property being *present* — not by its value being non-null — and

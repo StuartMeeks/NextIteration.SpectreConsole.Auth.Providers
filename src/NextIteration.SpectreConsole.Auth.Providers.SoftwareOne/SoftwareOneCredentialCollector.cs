@@ -158,9 +158,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
                     $"SoftwareOne token lookup failed: {(int)response.StatusCode} {response.StatusCode}. Body: {safeBody}");
             }
 
-            var result = JsonSerializer.Deserialize<SoftwareOneTokenSearchResult>(responseBody, TokenLookupJsonOptions)
-                ?? throw new InvalidOperationException(
-                    "SoftwareOne token lookup returned a success status with a body that did not deserialize to a search result.");
+            var result = DeserializeOrThrow<SoftwareOneTokenSearchResult>(
+                responseBody,
+                TokenLookupJsonOptions,
+                "SoftwareOne token lookup returned a success status with a body that did not deserialize to a search result.");
 
             // `required` is satisfied by a property being *present* in the JSON,
             // not by its value being non-null, and RespectNullableAnnotations is
@@ -270,5 +271,35 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne
 
             return string.Concat(redacted.AsSpan(0, ErrorBodyMaxChars), "… [truncated]");
         }
+        /// <summary>
+        /// Deserializes <paramref name="json"/>, turning both a literal
+        /// <c>null</c> body and a <see cref="JsonException"/> into the same
+        /// <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <remarks>
+        /// The bare <c>?? throw</c> this replaces only fired for a body that is
+        /// the literal <c>null</c>. Anything merely malformed — an HTML captive
+        /// portal interstitial, a truncated response, a payload missing a
+        /// required member — escaped as a raw <see cref="JsonException"/> whose
+        /// message names a System.Text.Json path and nothing the user can act
+        /// on. The original exception is preserved as the inner exception.
+        /// </remarks>
+        private static TValue DeserializeOrThrow<TValue>(
+            string json, JsonSerializerOptions? options, string failureMessage)
+        {
+            TValue? value;
+
+            try
+            {
+                value = JsonSerializer.Deserialize<TValue>(json, options);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(failureMessage, ex);
+            }
+
+            return value ?? throw new InvalidOperationException(failureMessage);
+        }
+
     }
 }

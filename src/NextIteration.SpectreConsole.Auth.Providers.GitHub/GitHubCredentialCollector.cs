@@ -173,9 +173,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     $"GitHub device-code request failed: {(int)response.StatusCode} {response.StatusCode}. Body: {TruncateErrorBody(body)}");
             }
 
-            var deviceCode = JsonSerializer.Deserialize<GitHubDeviceCodeDto>(body, JsonOptions)
-                ?? throw new InvalidOperationException(
-                    "GitHub device-code request returned a success status with a body that did not deserialize.");
+            var deviceCode = DeserializeOrThrow<GitHubDeviceCodeDto>(
+                body,
+                JsonOptions,
+                "GitHub device-code request returned a success status with a body that did not deserialize.");
 
             ValidateDeviceCode(deviceCode);
 
@@ -263,9 +264,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     $"GitHub user lookup failed: {(int)response.StatusCode} {response.StatusCode}. Body: {SanitiseErrorBody(body, accessToken)}");
             }
 
-            var user = JsonSerializer.Deserialize<GitHubUserDto>(body, JsonOptions)
-                ?? throw new InvalidOperationException(
-                    "GitHub user lookup returned a success status with a body that did not deserialize.");
+            var user = DeserializeOrThrow<GitHubUserDto>(
+                body,
+                JsonOptions,
+                "GitHub user lookup returned a success status with a body that did not deserialize.");
 
             if (string.IsNullOrWhiteSpace(user.Login))
             {
@@ -298,9 +300,10 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
                     $"GitHub token request failed: {(int)response.StatusCode} {response.StatusCode}. Body: {TruncateErrorBody(body)}");
             }
 
-            return JsonSerializer.Deserialize<GitHubAccessTokenDto>(body, JsonOptions)
-                ?? throw new InvalidOperationException(
-                    "GitHub token request returned a success status with a body that did not deserialize.");
+            return DeserializeOrThrow<GitHubAccessTokenDto>(
+                body,
+                JsonOptions,
+                "GitHub token request returned a success status with a body that did not deserialize.");
         }
 
         private static void ApplyJsonHeaders(HttpRequestMessage request)
@@ -529,5 +532,35 @@ namespace NextIteration.SpectreConsole.Auth.Providers.GitHub
 
             return TruncateErrorBody(redacted);
         }
+        /// <summary>
+        /// Deserializes <paramref name="json"/>, turning both a literal
+        /// <c>null</c> body and a <see cref="JsonException"/> into the same
+        /// <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <remarks>
+        /// The bare <c>?? throw</c> this replaces only fired for a body that is
+        /// the literal <c>null</c>. Anything merely malformed — an HTML captive
+        /// portal interstitial, a truncated response, a payload missing a
+        /// required member — escaped as a raw <see cref="JsonException"/> whose
+        /// message names a System.Text.Json path and nothing the user can act
+        /// on. The original exception is preserved as the inner exception.
+        /// </remarks>
+        private static TValue DeserializeOrThrow<TValue>(
+            string json, JsonSerializerOptions? options, string failureMessage)
+        {
+            TValue? value;
+
+            try
+            {
+                value = JsonSerializer.Deserialize<TValue>(json, options);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(failureMessage, ex);
+            }
+
+            return value ?? throw new InvalidOperationException(failureMessage);
+        }
+
     }
 }

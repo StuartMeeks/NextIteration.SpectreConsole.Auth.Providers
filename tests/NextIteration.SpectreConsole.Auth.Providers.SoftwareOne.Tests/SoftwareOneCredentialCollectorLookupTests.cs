@@ -301,14 +301,25 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             Assert.False(result.Successful);
         }
 
-        [Fact]
-        public async Task LookupTokenAsync_MalformedJson_Throws()
+        [Theory]
+        [InlineData("{ not json")]
+        // A corporate captive portal answering the lookup with an HTML
+        // interstitial is the realistic version of this.
+        [InlineData("<html><body>Sign in to continue</body></html>")]
+        [InlineData("")]
+        public async Task LookupTokenAsync_MalformedJson_ThrowsInvalidOperation(string body)
         {
-            var http = StubHttpClientFactory.ReturningJson("{ not json");
+            // LookupTokenAsync's XML doc promises InvalidOperationException "on
+            // any failure mode (HTTP error, zero matches, multiple matches,
+            // malformed response)". This test previously asserted JsonException,
+            // codifying the divergence rather than catching it.
+            var http = StubHttpClientFactory.ReturningJson(body);
             var collector = new SoftwareOneCredentialCollector(http);
 
-            await Assert.ThrowsAsync<System.Text.Json.JsonException>(
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
                 () => collector.LookupTokenAsync(BaseUrl, "abc-123"));
+
+            Assert.IsType<System.Text.Json.JsonException>(ex.InnerException);
         }
 
         [Fact]

@@ -101,13 +101,24 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             await Assert.ThrowsAsync<InvalidOperationException>(() => service.AuthenticateAsync());
         }
 
-        [Fact]
-        public async Task AuthenticateAsync_WhenSelectedJsonIsMalformed_Throws()
+        [Theory]
+        [InlineData("{ not json")]
+        [InlineData("<html><body>Sign in to continue</body></html>")]
+        // Note: an empty/whitespace stored value is not covered here — it hits
+        // the earlier "No … credential selected" guard, which is its own test.
+        public async Task AuthenticateAsync_WhenSelectedJsonIsMalformed_ThrowsActionableException(string stored)
         {
-            var manager = new FakeCredentialManager { SelectedCredentialJson = "{ not json" };
+            // Brings the auth service into line with SoftwareOneCredentialSummaryProvider,
+            // which already catches JsonException and renders "<unreadable credential>"
+            // rather than letting it escape.
+            var manager = new FakeCredentialManager { SelectedCredentialJson = stored };
             var service = new SoftwareOneAuthenticationService(manager);
 
-            await Assert.ThrowsAsync<JsonException>(() => service.AuthenticateAsync());
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => service.AuthenticateAsync());
+
+            Assert.Contains("accounts add", ex.Message, StringComparison.Ordinal);
+            Assert.IsType<JsonException>(ex.InnerException);
         }
 
         [Fact]
