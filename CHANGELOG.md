@@ -11,6 +11,22 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **SoftwareOne's quick start now registers `IHttpClientFactory`.** The package README went
+  straight from `AddCredentialStore` to `AddSoftwareOneAuthProvider()` with no
+  `services.AddHttpClient()`, unlike Adobe's and GitHub's. `SoftwareOneCredentialCollector`
+  takes `IHttpClientFactory` as its only constructor dependency — it looks the API token up
+  against the Marketplace API at `accounts add` time — so a verbatim copy of the quick start
+  built and started cleanly, then threw *"Unable to resolve service for type
+  'System.Net.Http.IHttpClientFactory'"* the first time a user ran `accounts add`. Because
+  the failure is at command-invocation time rather than container-build time, a startup
+  smoke test did not catch it. The root README's claim that SoftwareOne is "pass-through"
+  is corrected (true of its auth service, false of its collector), and
+  `AddSoftwareOneAuthProvider` and `AddAdobeAuthProvider` gain the `<remarks>` naming the
+  prerequisite that `AddGitHubAuthProvider` already had, so IntelliSense shows it at the
+  DI entry point.
+
 ### Fixed
 
 - **GitHub: the host prompt now rejects anything that is not a bare `host[:port]`.**

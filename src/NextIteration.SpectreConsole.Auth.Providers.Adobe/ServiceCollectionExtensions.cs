@@ -19,6 +19,11 @@ namespace NextIteration.SpectreConsole.Auth.Providers.Adobe
         /// so consumers that depend on the interface (rather than the concrete
         /// type) can resolve it.
         /// </summary>
+        /// <remarks>
+        /// The auth service exchanges the client credentials at Adobe IMS via
+        /// <c>IHttpClientFactory</c>, so consumers must also call
+        /// <c>services.AddHttpClient()</c>.
+        /// </remarks>
         public static IServiceCollection AddAdobeAuthProvider(this IServiceCollection services)
         {
             services.AddSingleton<AdobeAuthenticationService>();
