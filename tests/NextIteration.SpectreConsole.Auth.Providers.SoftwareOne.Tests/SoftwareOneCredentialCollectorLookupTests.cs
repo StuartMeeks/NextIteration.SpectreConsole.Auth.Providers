@@ -145,6 +145,53 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
             Assert.Contains("bad gateway", ex.Message, StringComparison.Ordinal);
         }
 
+        [Theory]
+        // A token needing no escaping — the case the original test used, and the
+        // only one the old literal-only redaction actually covered.
+        [InlineData("tok-secret-12345")]
+        // Real Marketplace tokens carry an "idt:" prefix and base64 payloads, so
+        // ':' '+' '/' '=' are the norm, not the edge case. Each of these escapes
+        // to something that does not contain the raw value, so redacting only
+        // the literal left the token in the message verbatim.
+        [InlineData("idt:AbC+dEf/123=")]
+        [InlineData("abc+def/ghi=")]
+        [InlineData("idt:AbC-123_x")]
+        [InlineData("tok with spaces")]
+        public async Task LookupTokenAsync_HttpError_RedactsPercentEncodedTokenFromBody(string tokenValue)
+        {
+            // The request URL carries Uri.EscapeDataString(apiToken), so that is
+            // the form a proxy echoing the URL puts in the body — the exact
+            // threat the sanitiser's own comment names.
+            var encoded = Uri.EscapeDataString(tokenValue);
+            var http = StubHttpClientFactory.ReturningJson(
+                $$"""{ "error": "bad gateway", "request_url": "/v1/accounts/api-tokens?eq(token,'{{encoded}}')&limit=2" }""",
+                HttpStatusCode.BadGateway);
+            var collector = new SoftwareOneCredentialCollector(http);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => collector.LookupTokenAsync(BaseUrl, tokenValue));
+
+            Assert.DoesNotContain(encoded, ex.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain(tokenValue, ex.Message, StringComparison.Ordinal);
+            Assert.Contains("<redacted>", ex.Message, StringComparison.Ordinal);
+            Assert.Contains("bad gateway", ex.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void SanitiseErrorBody_RedactsBothRawAndEncodedForms()
+        {
+            const string token = "idt:AbC+dEf/123=";
+            var encoded = Uri.EscapeDataString(token);
+            Assert.NotEqual(token, encoded);
+
+            var sanitised = SoftwareOneCredentialCollector.SanitiseErrorBody(
+                $"raw={token} encoded={encoded}", token);
+
+            Assert.DoesNotContain(token, sanitised, StringComparison.Ordinal);
+            Assert.DoesNotContain(encoded, sanitised, StringComparison.Ordinal);
+            Assert.Equal("raw=<redacted> encoded=<redacted>", sanitised);
+        }
+
         [Fact]
         public async Task LookupTokenAsync_HttpError_TruncatesLargeBody()
         {
