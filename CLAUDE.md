@@ -19,7 +19,10 @@ and on-disk storage. They consume it through a capped range (`[2.0.0,3.0.0)`).
   but deletes every artifact except the tagged package's before pushing, so a tag ships
   exactly its own package. That extra step is a documented deviation from the canonical
   workflow (`NextIteration.Standards` EXCEPTIONS.md §3.0.1 and §3.2) — keep it, and keep
-  the rest of the job identical to the template.
+  the rest of the job identical to the template. **Push release tags one at a time.**
+  GitHub Actions silently creates no workflow runs when a single push carries more than
+  three tags, and this repo has four packages — the tags land, nothing builds, nothing
+  publishes. See RELEASING.md.
 - **The core dependency is a capped range, `[2.0.0,3.0.0)`.** The cap stops a `3.0.0`
   silently changing the `ICredentialCollector` / `ICredentialSummaryProvider` /
   `ICredentialManager` contracts underneath the providers. Floored at 2.0.0 — validated

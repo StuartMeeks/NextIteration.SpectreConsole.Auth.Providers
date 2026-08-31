@@ -85,16 +85,35 @@ The `<version>` part must match the `<Version>` property in the corresponding `.
 
 ## Publishing multiple packages at once
 
-Push separate tags — one per package. Each triggers its own CI run:
+Push separate tags — one per package. Each triggers its own CI run.
+
+> **Push at most three tags per `git push`.** GitHub Actions does not create
+> workflow runs when a single push contains more than three tags — and it fails
+> *silently*: the tags appear on the remote, nothing runs, and nothing is
+> published. This bit the 2.1.0 release, where all four tags went up in one push
+> and produced zero runs. The safe habit for this repo, which has four packages,
+> is one tag per push:
 
 ```bash
-git tag adobe-v0.1.0
-git tag airtable-v0.1.0
-git tag softwareone-v0.1.0
-git push origin adobe-v0.1.0 airtable-v0.1.0 softwareone-v0.1.0
+for t in adobe-v0.1.0 airtable-v0.1.0 softwareone-v0.1.0 github-v0.1.0; do
+  git tag "$t"
+  git push origin "$t"
+done
 ```
 
-Three CI runs will fire in parallel; each publishes its one package.
+Each push fires its own CI run; they proceed in parallel and each publishes its
+one package.
+
+**Always confirm a run actually started** before assuming a tag will publish —
+the failure mode above looks identical to "CI hasn't picked it up yet":
+
+```bash
+gh run list --limit 5        # expect one run per tag you just pushed
+```
+
+If a tag produced no run, delete it and push it again on its own — see
+*Re-running a failed publish* below. Deleting is safe as long as nothing was
+published for that tag.
 
 ## Re-running a failed publish
 
