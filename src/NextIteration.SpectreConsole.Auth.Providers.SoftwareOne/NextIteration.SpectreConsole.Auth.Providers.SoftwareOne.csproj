@@ -6,7 +6,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.SoftwareOne</PackageId>
-		<Version>2.0.0</Version>
+		<Version>2.1.0</Version>
 		<Description>SoftwareOne Marketplace credential provider for NextIteration.SpectreConsole.Auth. Ships SoftwareOneCredential, SoftwareOneToken, SoftwareOneAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt. The collector performs a live lookup against the Marketplace API at add-time to validate the token and enrich the credential with the account and token metadata.</Description>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

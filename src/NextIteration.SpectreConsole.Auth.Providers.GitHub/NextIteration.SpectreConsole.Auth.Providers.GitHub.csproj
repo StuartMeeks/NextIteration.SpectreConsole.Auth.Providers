@@ -6,7 +6,7 @@
 
 	<PropertyGroup>
 		<PackageId>NextIteration.SpectreConsole.Auth.Providers.GitHub</PackageId>
-		<Version>2.0.0</Version>
+		<Version>2.1.0</Version>
 		<Description>GitHub credential provider for NextIteration.SpectreConsole.Auth. Ships GitHubCredential, GitHubToken, GitHubAuthenticationService, and the Spectre.Console collector that drives the accounts-add prompt. The collector runs the OAuth device flow (the same flow gh auth login uses), then validates and enriches the credential with the authenticated user's identity.</Description>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

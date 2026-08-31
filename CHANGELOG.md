@@ -11,71 +11,11 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Tests
+---
 
-- **Closed the highest-value coverage gaps found in review.** `PollForTokenAsync`'s
-  `expired_token`, `case null or ""` and `default:` arms and the non-success token-request
-  branch had no tests, so inverting the `null or ""` guard — which hot-loops until the
-  deadline and then reports a misleading "Timed out" — left the suite green. GitHub's
-  refresh **transport**-error branch, the only place the stored refresh token is scrubbed
-  from an echoed body, was never reached: the sole refresh-failure test stubbed a `200`
-  carrying an error field. GitHub was the only summary provider without the
-  JSON-`null`-literal test its three siblings have, leaving the `credential is null` guard
-  uncovered — the guard that stops one bad row taking down the whole `accounts list` with
-  a `NullReferenceException` inside the Spectre render loop. Adobe's literal-`null` token
-  body was unpinned. Airtable's access-token guard was an inline lambda with no seam, so
-  it is now `internal static ValidateAccessToken`, matching how the other three expose
-  their URL validators. And all four `FakeCredentialManager` doubles discarded the
-  `providerName` the real `ICredentialManager` keys its store by; they now capture it and
-  four tests assert it.
+## [2.1.0 / 2.1.0 / 2.1.0 / 2.1.0] — 2026-08-31
 
-### Documentation
-
-- **GitHub: the refresh-token limitation now states its consequence, not just its
-  mechanism.** That a refreshed access token is not written back to the keystore was
-  already documented; what was not is that GitHub *rotates* the refresh token — the
-  response carries a new one and the token just used stops working. Because nothing is
-  persisted, the stored refresh token is spent after the **first** refresh, so the
-  existing promise that "each authenticate call that needs a refresh performs one" holds
-  only for that one. The next expiry surfaces as *"GitHub token refresh was rejected …
-  run `accounts add` again"*, and re-adding the account is the remedy. Applies only to
-  OAuth Apps issuing expiring tokens. The happy-path test stubbed
-  `"refresh_token": "ghr_new"` and asserted nothing about it, reading as if rotation were
-  handled; a new test pins the discard explicitly.
-
-
-- **The core dependency's documented range was a full major behind the actual one, in six
-  places.** `Directory.Packages.props` declares `[2.0.0,3.0.0)`, but the comment directly
-  above it still explained the 1.x cap and said "Floored at 1.0.1", and a second comment
-  said the per-TFM floors match core "from 0.7.1 onward". `CLAUDE.md` repeated
-  `[1.0.0,2.0.0)` twice and asserted the collector/summary-provider contracts were
-  "unchanged from 0.7.1" — which the 2.0.0 entry below contradicts directly. All four
-  packed READMEs told nuget.org consumers "≥ 1.0.0", and the root README told new-provider
-  authors to reference core "at the current minor" rather than a major-capped range. Only
-  `CHANGELOG.md` was current. All six corrected, and the READMEs now state plainly that
-  core 1.x is not supported.
-- **Three packed READMEs advertised .NET 10 only.** All four csprojs target
-  `net8.0;net10.0` and CI tests both, but only GitHub's README said so. A net8.0 LTS team
-  reading the Adobe, Airtable or SoftwareOne package page would have ruled the package out
-  — despite net8.0 being a deliberately maintained target whose per-TFM floors CLAUDE.md
-  forbids raising precisely to keep those consumers supported.
-- **Airtable's README described the summary mask as "shorter than 10 chars"; the code
-  masks at `<= 10`.** An 11-character value is fingerprinted, not starred. Corrected, and
-  the boundary now has tests — existing coverage jumped from length 3 to 31.
-
-- **SoftwareOne's quick start now registers `IHttpClientFactory`.** The package README went
-  straight from `AddCredentialStore` to `AddSoftwareOneAuthProvider()` with no
-  `services.AddHttpClient()`, unlike Adobe's and GitHub's. `SoftwareOneCredentialCollector`
-  takes `IHttpClientFactory` as its only constructor dependency — it looks the API token up
-  against the Marketplace API at `accounts add` time — so a verbatim copy of the quick start
-  built and started cleanly, then threw *"Unable to resolve service for type
-  'System.Net.Http.IHttpClientFactory'"* the first time a user ran `accounts add`. Because
-  the failure is at command-invocation time rather than container-build time, a startup
-  smoke test did not catch it. The root README's claim that SoftwareOne is "pass-through"
-  is corrected (true of its auth service, false of its collector), and
-  `AddSoftwareOneAuthProvider` and `AddAdobeAuthProvider` gain the `<remarks>` naming the
-  prerequisite that `AddGitHubAuthProvider` already had, so IntelliSense shows it at the
-  DI entry point.
+_Coordinated minor release of all four providers (Adobe → 2.1.0, Airtable → 2.1.0, SoftwareOne → 2.1.0, GitHub → 2.1.0), from a full code review of the repository. No public API was added, changed or removed, so consumers need no source changes — but two runtime behaviours changed and are called out under **Changed** below._
 
 ### Security
 
@@ -109,6 +49,19 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Suppression is scoped to that one client and survives a consumer pre-configuring the
   same name, as the README documents. Registering the client here also means the collector
   resolves without the consumer calling `AddHttpClient()` — the footgun noted below.
+
+### Changed
+
+- **Malformed responses and stored credentials now throw `InvalidOperationException`
+  instead of `System.Text.Json.JsonException`.** See the entry under *Fixed*. Code
+  catching `JsonException` around these calls will no longer match; the thrown exception
+  carries the original as its `InnerException`. This is the change most likely to be
+  noticed.
+- **`AddSoftwareOneAuthProvider` now registers its own named `HttpClient`** (with default
+  logging suppressed — see *Security*). As a side effect it also registers
+  `IHttpClientFactory`, so the SoftwareOne collector resolves even if the consumer never
+  calls `services.AddHttpClient()`. Calling it remains correct and is still what the
+  README shows.
 
 ### Fixed
 
@@ -225,6 +178,74 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `accounts add` after the device panel rendered was ignored: the loop kept POSTing
   GitHub's token endpoint every 5s until `expires_in` elapsed (900s on github.com),
   leaving the CLI apparently hung for up to 15 minutes.
+
+---
+
+### Documentation
+
+- **GitHub: the refresh-token limitation now states its consequence, not just its
+  mechanism.** That a refreshed access token is not written back to the keystore was
+  already documented; what was not is that GitHub *rotates* the refresh token — the
+  response carries a new one and the token just used stops working. Because nothing is
+  persisted, the stored refresh token is spent after the **first** refresh, so the
+  existing promise that "each authenticate call that needs a refresh performs one" holds
+  only for that one. The next expiry surfaces as *"GitHub token refresh was rejected …
+  run `accounts add` again"*, and re-adding the account is the remedy. Applies only to
+  OAuth Apps issuing expiring tokens. The happy-path test stubbed
+  `"refresh_token": "ghr_new"` and asserted nothing about it, reading as if rotation were
+  handled; a new test pins the discard explicitly.
+
+
+- **The core dependency's documented range was a full major behind the actual one, in six
+  places.** `Directory.Packages.props` declares `[2.0.0,3.0.0)`, but the comment directly
+  above it still explained the 1.x cap and said "Floored at 1.0.1", and a second comment
+  said the per-TFM floors match core "from 0.7.1 onward". `CLAUDE.md` repeated
+  `[1.0.0,2.0.0)` twice and asserted the collector/summary-provider contracts were
+  "unchanged from 0.7.1" — which the 2.0.0 entry below contradicts directly. All four
+  packed READMEs told nuget.org consumers "≥ 1.0.0", and the root README told new-provider
+  authors to reference core "at the current minor" rather than a major-capped range. Only
+  `CHANGELOG.md` was current. All six corrected, and the READMEs now state plainly that
+  core 1.x is not supported.
+- **Three packed READMEs advertised .NET 10 only.** All four csprojs target
+  `net8.0;net10.0` and CI tests both, but only GitHub's README said so. A net8.0 LTS team
+  reading the Adobe, Airtable or SoftwareOne package page would have ruled the package out
+  — despite net8.0 being a deliberately maintained target whose per-TFM floors CLAUDE.md
+  forbids raising precisely to keep those consumers supported.
+- **Airtable's README described the summary mask as "shorter than 10 chars"; the code
+  masks at `<= 10`.** An 11-character value is fingerprinted, not starred. Corrected, and
+  the boundary now has tests — existing coverage jumped from length 3 to 31.
+
+- **SoftwareOne's quick start now registers `IHttpClientFactory`.** The package README went
+  straight from `AddCredentialStore` to `AddSoftwareOneAuthProvider()` with no
+  `services.AddHttpClient()`, unlike Adobe's and GitHub's. `SoftwareOneCredentialCollector`
+  takes `IHttpClientFactory` as its only constructor dependency — it looks the API token up
+  against the Marketplace API at `accounts add` time — so a verbatim copy of the quick start
+  built and started cleanly, then threw *"Unable to resolve service for type
+  'System.Net.Http.IHttpClientFactory'"* the first time a user ran `accounts add`. Because
+  the failure is at command-invocation time rather than container-build time, a startup
+  smoke test did not catch it. The root README's claim that SoftwareOne is "pass-through"
+  is corrected (true of its auth service, false of its collector), and
+  `AddSoftwareOneAuthProvider` and `AddAdobeAuthProvider` gain the `<remarks>` naming the
+  prerequisite that `AddGitHubAuthProvider` already had, so IntelliSense shows it at the
+  DI entry point.
+
+### Tests
+
+- **Closed the highest-value coverage gaps found in review.** `PollForTokenAsync`'s
+  `expired_token`, `case null or ""` and `default:` arms and the non-success token-request
+  branch had no tests, so inverting the `null or ""` guard — which hot-loops until the
+  deadline and then reports a misleading "Timed out" — left the suite green. GitHub's
+  refresh **transport**-error branch, the only place the stored refresh token is scrubbed
+  from an echoed body, was never reached: the sole refresh-failure test stubbed a `200`
+  carrying an error field. GitHub was the only summary provider without the
+  JSON-`null`-literal test its three siblings have, leaving the `credential is null` guard
+  uncovered — the guard that stops one bad row taking down the whole `accounts list` with
+  a `NullReferenceException` inside the Spectre render loop. Adobe's literal-`null` token
+  body was unpinned. Airtable's access-token guard was an inline lambda with no seam, so
+  it is now `internal static ValidateAccessToken`, matching how the other three expose
+  their URL validators. And all four `FakeCredentialManager` doubles discarded the
+  `providerName` the real `ICredentialManager` keys its store by; they now capture it and
+  four tests assert it.
 
 ---
 
