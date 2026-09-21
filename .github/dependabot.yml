@@ -23,30 +23,37 @@ updates:
       - dependencies
       - nuget
     # -------------------------------------------------------------------------
-    # REPO-SPECIFIC (STANDARD.md 4.10). This list must equal exactly the packages
-    # this repo floors per target framework — no more, no less. These providers
-    # floor two runtime-aligned Microsoft platform packages per TFM (net8 -> 8.0.x,
-    # net10 -> 10.0.x); System.Security.Cryptography.ProtectedData is NOT referenced
-    # here (it lives in the core Auth package), so it is absent from this list.
+    # REPO-SPECIFIC (STANDARD.md 4.10). This is the one block NOT copied verbatim:
+    # it must list exactly the packages *this* repo floors per target framework —
+    # no more, no less — and those differ per repo, so audit-drift.sh checks this
+    # list against the repo's actual per-TFM floors (4.6 is a structural clause,
+    # not a byte-identity one). These providers floor two runtime-aligned Microsoft
+    # platform packages per TFM (net8 -> 8.0.x, net10 -> 10.0.x);
+    # System.Security.Cryptography.ProtectedData is NOT referenced here (it lives in
+    # the core Auth package), so it is absent from this list.
     #
-    # A net8.0 consumer must stay on its own 8.0.x servicing line, so an 8.x -> 10.x
-    # major PR is never mergeable and would just be weekly noise.
+    # These carry deliberate per-TFM floors (see the Directory.Packages.props
+    # comment): a net8.0 consumer must stay on its own 8.0.x servicing line. They
+    # are ignored ENTIRELY (no update-types filter = every version update),
+    # STANDARD.md 4.10.
     #
-    # Two caveats, both inherent to Dependabot rather than to this repo:
-    #  1. `ignore` matches by dependency NAME and cannot be scoped to a single
-    #     target framework. These packages are referenced under BOTH the net8.0
-    #     and net10.0 ItemGroups, so this also suppresses a future net10 major
-    #     (10.x -> 11.x). Bump those by hand when a new .NET major lands.
-    #  2. `ignore` conditions filter SECURITY updates as well as version updates.
-    #     Low risk in practice (a CVE fix for 8.0.x ships as 8.0.y, a patch).
+    # A major-only ignore is NOT enough. `ignore` matches by dependency NAME and
+    # cannot be scoped to one target framework, and each name appears under BOTH
+    # the net8.0 and net10.0 ItemGroups. Dependabot tracks a single version per
+    # name, so a net10 MINOR/PATCH bump — which a semver-major filter does not
+    # catch — is applied to every entry of that name, silently rewriting the
+    # net8.0 floor to a 10.x version. Auth PR #89 did exactly that
+    # (8.0.x -> 10.0.12). Ignoring the package outright is the only name-scoped
+    # rule that protects a per-TFM floor; both floors are bumped by hand.
+    #
+    # Caveat, inherent to Dependabot: `ignore` also filters SECURITY updates, so
+    # a security fix for these is suppressed too. Low risk (a CVE fix for a
+    # floored line ships as a patch on that line, applied by hand), but worth
+    # knowing.
     # -------------------------------------------------------------------------
     ignore:
       - dependency-name: Microsoft.Extensions.DependencyInjection.Abstractions
-        update-types:
-          - version-update:semver-major
       - dependency-name: Microsoft.Extensions.Http
-        update-types:
-          - version-update:semver-major
     groups:
       nuget-minor-patch:
         patterns:
