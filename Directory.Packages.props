@@ -32,8 +32,8 @@
 		<PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12" />
 	</ItemGroup>
 
 	<!--
@@ -50,18 +50,23 @@
 			ICredentialSummaryProvider / ICredentialManager contracts could
 			break. Bump the upper bound deliberately after validating against
 			the next major.
-			Floored at 2.0.0: the version built and tested against. That is
-			also the version the previous [1.0.1,2.0.0) cap refused, and it
-			refused it correctly — core 2.0.0 added a trailing
+			Floored at 2.1.0: the version built and tested against. The floor
+			tracks the tested-against version per STANDARD.md 1.4, so it moved
+			with the core 2.1.0 adoption. Core 2.1.0 raised its own net10
+			dependency floors (Microsoft.Extensions.DependencyInjection.Abstractions
+			and Microsoft.Extensions.Http to 10.0.12); the net10 ItemGroup above
+			matches them, so the graph resolves downgrade-free. Its net8 floors
+			(8.0.2 / 8.0.1) were unchanged from 2.0.0, so net8 needs no bump.
+			The 2.x floor itself exists because core 2.0.0 added a trailing
 			CancellationToken to ICredentialCollector.CollectAsync, to the
 			three IAuthenticationService<,> members and across the
-			ICredentialManager surface. Because the providers *implement*
+			ICredentialManager surface — the change the previous [1.0.1,2.0.0)
+			cap refused, and refused correctly. Because the providers *implement*
 			those interfaces, a 1.x provider assembly running against core
 			2.x would fail at runtime; the range turns that into a restore
 			error instead. Consumers on core 1.x cannot use these providers.
-			The floor tracks the tested-against version per STANDARD.md 1.4.
 		-->
-		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[2.0.0,3.0.0)" />
+		<PackageVersion Include="NextIteration.SpectreConsole.Auth" Version="[2.1.0,3.0.0)" />
 	</ItemGroup>
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). STANDARD.md 1.7. -->
@@ -75,7 +80,7 @@
 		coverlet.collector: all three are VSTest-only and MTP replaces the runner.
 	-->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
 		<PackageVersion Include="xunit.v3" Version="4.0.1" />
 		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />
 	</ItemGroup>
