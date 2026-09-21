@@ -11,6 +11,13 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Applies to all four providers (Adobe, Airtable, SoftwareOne, GitHub) — the change is in the shared `Directory.Packages.props`. No public API or source change; consumers are affected only through the raised dependency floors below._
+
+### Changed
+
+- **Adopted core `NextIteration.SpectreConsole.Auth` 2.1.0** — the dependency floor moved from `[2.0.0,3.0.0)` to `[2.1.0,3.0.0)` (cap unchanged). The floor tracks the version built and tested against (STANDARD.md 1.4), and a version range resolves to its floor, so this is the version consumers actually get.
+- **Raised the `net10.0` platform floors to 10.0.12** — `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Http` (both `net10.0`), plus the test-only `Microsoft.Extensions.DependencyInjection`, moved from 10.0.10 to 10.0.12 to match core 2.1.0's own `net10.0` dependency floors. Without this, restore fails with `NU1605` package-downgrade errors (fatal under `TreatWarningsAsErrors`). The `net8.0` floors (8.0.2 / 8.0.1) are unchanged — core 2.1.0 did not move its `net8.0` dependencies, so `net8.0` LTS consumers stay on their own servicing line.
+
 ---
 
 ## [2.1.0 / 2.1.0 / 2.1.0 / 2.1.0] — 2026-08-31
