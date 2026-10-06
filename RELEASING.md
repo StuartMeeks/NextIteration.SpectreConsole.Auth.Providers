@@ -71,17 +71,10 @@ The `<version>` part must match the `<Version>` property in the corresponding `.
    ```
    Allow a few minutes for indexing.
 
-6. **(Optional) Create a GitHub release** for human-readable release notes:
-
-   ```bash
-   gh release create adobe-v0.1.1 \
-     --title "Adobe v0.1.1" \
-     --notes "What changed in this release..."
-   ```
-
-   This adds the release-notes page at
-   `https://github.com/StuartMeeks/NextIteration.SpectreConsole.Auth.Providers/releases/tag/adobe-v0.1.1`
-   without re-triggering CI (the tag already exists).
+Do **not** create a GitHub Release for the tag. `NextIteration.Standards` STANDARD.md
+§3.10 makes nuget.org the only distribution channel and forbids Release objects
+(published, draft or pre-release). The tag is the release trigger. Release notes live in
+`CHANGELOG.md`.
 
 ## Publishing multiple packages at once
 

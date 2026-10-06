@@ -18,7 +18,7 @@ Drops a ready-to-use `AirtableCredential`, `AirtableToken`, authentication servi
 dotnet add package NextIteration.SpectreConsole.Auth.Providers.Airtable
 ```
 
-Requires the core package (`NextIteration.SpectreConsole.Auth`, major-capped range `[2.0.0,3.0.0)`) — NuGet pulls it in transitively. Core 1.x is not supported: core 2.0.0 added a `CancellationToken` to the interfaces these providers implement.
+Requires the core package (`NextIteration.SpectreConsole.Auth`, major-capped range `[2.2.0,3.0.0)`) — NuGet pulls it in transitively. Core 1.x is not supported: core 2.0.0 added a `CancellationToken` to the interfaces these providers implement.
 
 ---
 
