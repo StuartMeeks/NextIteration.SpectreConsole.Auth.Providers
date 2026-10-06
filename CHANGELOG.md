@@ -13,6 +13,25 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0 / 2.3.0 / 2.3.0 / 2.3.0] — 2026-10-06
+
+_Coordinated minor release of all four providers (Adobe → 2.3.0, Airtable → 2.3.0, SoftwareOne → 2.3.0, GitHub → 2.3.0). No provider code or public API changed. Its purpose is to **deliver core `NextIteration.SpectreConsole.Auth` 2.2.0 to consumers**: a NuGet version range resolves to its floor, so consumers of the 2.2.0 providers (floor `[2.1.0,3.0.0)`) still resolve core 2.1.0. Core 2.2.0 moves to Spectre.Console.Cli 0.57.2, which carries an upgrade note. Read **Upgrade note** before upgrading._
+
+### Changed
+
+- **Adopted core `NextIteration.SpectreConsole.Auth` 2.2.0.** The dependency floor moved from `[2.1.0,3.0.0)` to `[2.2.0,3.0.0)`; the cap is unchanged. Core 2.2.0 changed no provider-facing interface and no platform floor, so the `net8.0` / `net10.0` `Microsoft.Extensions.*` floors are unchanged.
+
+### Upgrade note
+
+- **Spectre.Console.Cli 0.57.2 arrives transitively** with core 2.2.0. Spectre.Console.Cli 0.57 changed `AsyncCommand<TSettings>.ExecuteAsync` (and `Command<TSettings>.Execute`) from `protected` to `public`. Any command in your own app that overrides it as `protected` fails with CS0507 until it is made `public`.
+
+### Documentation
+
+- Per-provider READMEs: the stated core range was `[2.0.0,3.0.0)`, two floors stale. They now say `[2.2.0,3.0.0)`.
+- RELEASING.md: removed the optional "Create a GitHub release" step. STANDARD.md §3.10 forbids GitHub Releases; nuget.org is the only channel and the tag is the release trigger.
+
+---
+
 ## [2.2.0 / 2.2.0 / 2.2.0 / 2.2.0] — 2026-09-21
 
 _Coordinated minor release of all four providers (Adobe → 2.2.0, Airtable → 2.2.0, SoftwareOne → 2.2.0, GitHub → 2.2.0). No provider code or public API changed — the entire change is in the shared `Directory.Packages.props`. Its purpose is to **deliver core `NextIteration.SpectreConsole.Auth` 2.1.0 to consumers**, which fixes a data-loss bug in the local file keystore. Because a NuGet version range resolves to its **floor**, consumers of the 2.1.0 providers (floor `[2.0.0,3.0.0)`) resolve core 2.0.0 and do **not** get that fix; raising the floor is what moves them onto 2.1.0. One behaviour change rides along with the core upgrade — read **Behaviour change** before upgrading._
