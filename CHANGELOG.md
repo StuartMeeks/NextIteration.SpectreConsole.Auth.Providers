@@ -13,6 +13,20 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0 / 2.4.0 / 2.4.0 / 2.4.0] — 2026-10-13
+
+_Coordinated minor release of all four providers (Adobe → 2.4.0, Airtable → 2.4.0, SoftwareOne → 2.4.0, GitHub → 2.4.0). No provider code or public API changed. Its purpose is to **deliver core `NextIteration.SpectreConsole.Auth` 2.3.0 to consumers**: a NuGet version range resolves to its floor, so consumers of the 2.3.0 providers (floor `[2.2.0,3.0.0)`) still resolve core 2.2.0._
+
+### Changed
+
+- **Adopted core `NextIteration.SpectreConsole.Auth` 2.3.0.** The dependency floor moved from `[2.2.0,3.0.0)` to `[2.3.0,3.0.0)`; the cap is unchanged. Core 2.3.0 adds an `accounts info` command, which shows where and how credentials are stored (backend, credentials directory, encryption, directory permissions). Any CLI that calls `AddAccountsBranch()` gets it with no code change. It changed no provider-facing interface and no platform floor, so the `net8.0` / `net10.0` `Microsoft.Extensions.*` floors are unchanged.
+
+### Documentation
+
+- Per-provider READMEs state the new core range, `[2.3.0,3.0.0)`.
+
+---
+
 ## [2.3.0 / 2.3.0 / 2.3.0 / 2.3.0] — 2026-10-06
 
 _Coordinated minor release of all four providers (Adobe → 2.3.0, Airtable → 2.3.0, SoftwareOne → 2.3.0, GitHub → 2.3.0). No provider code or public API changed. Its purpose is to **deliver core `NextIteration.SpectreConsole.Auth` 2.2.0 to consumers**: a NuGet version range resolves to its floor, so consumers of the 2.2.0 providers (floor `[2.1.0,3.0.0)`) still resolve core 2.1.0. Core 2.2.0 moves to Spectre.Console.Cli 0.57.2, which carries an upgrade note. Read **Upgrade note** before upgrading._
