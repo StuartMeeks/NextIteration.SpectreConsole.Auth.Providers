@@ -98,7 +98,12 @@ namespace NextIteration.SpectreConsole.Auth.Providers.SoftwareOne.Tests
         {
             protected override Task<HttpResponseMessage> SendAsync(
                 HttpRequestMessage request, CancellationToken cancellationToken)
-                => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+                => Task.FromResult(CreateOkResponse());
+
+            // Ownership of the response passes to HttpClient's caller, which
+            // disposes it (`using var response` in each test). Building it in a
+            // factory makes that hand-off visible to the analyser.
+            private static HttpResponseMessage CreateOkResponse() => new(HttpStatusCode.OK);
         }
 
         private sealed class CapturingLoggerProvider : ILoggerProvider

@@ -11,6 +11,10 @@ and each package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CodeQL `cs/local-not-disposed` alert in the SoftwareOne HTTP-logging tests.** The test handler built its `HttpResponseMessage` inline inside `Task.FromResult`, so the analyser could not see that ownership passes to the caller, which disposes it. The response now comes from a small factory method, matching the other stub handlers. Test code only; no package change.
+
 ---
 
 ## [2.4.0 / 2.4.0 / 2.4.0 / 2.4.0] — 2026-10-13
