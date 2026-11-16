@@ -84,7 +84,7 @@
 		coverlet.collector: all three are VSTest-only and MTP replaces the runner.
 	-->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
 		<PackageVersion Include="xunit.v3" Version="4.0.3" />
 		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
 	</ItemGroup>
