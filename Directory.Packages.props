@@ -75,7 +75,7 @@
 
 	<!-- Build / source-link tooling (PrivateAssets in csprojs). STANDARD.md 1.7. -->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.404" />
 	</ItemGroup>
 
 	<!--
@@ -84,7 +84,7 @@
 		coverlet.collector: all three are VSTest-only and MTP replaces the runner.
 	-->
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
 		<PackageVersion Include="xunit.v3" Version="4.0.3" />
 		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
 	</ItemGroup>
