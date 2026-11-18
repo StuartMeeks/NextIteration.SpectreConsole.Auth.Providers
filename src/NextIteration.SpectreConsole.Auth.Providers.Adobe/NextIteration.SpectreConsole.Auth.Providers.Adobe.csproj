@@ -23,6 +23,7 @@
 
 	<ItemGroup>
 		<!-- Versions live in /Directory.Packages.props (CPM). -->
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.15" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="Spectre.Console" />
